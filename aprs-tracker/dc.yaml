@@ -4,7 +4,7 @@ metadata:
   labels:
     app: aprs-tracker
   name: aprs-tracker
-  namespace: wp-crm
+  namespace: wp-lorawan
 spec:
   replicas: 1
   selector:
@@ -27,7 +27,7 @@ spec:
         deploymentconfig: aprs-tracker
     spec:
       containers:
-      - image: wp-crm/aprs-tracker:latest
+      - image: wp-lorawan/aprs-tracker:latest
         imagePullPolicy: Always
         name: aprs-tracker
         ports:
@@ -75,5 +75,5 @@ spec:
       from:
         kind: ImageStreamTag
         name: aprs-tracker:latest
-        namespace: wp-crm
+        namespace: wp-lorawan
     type: ImageChange

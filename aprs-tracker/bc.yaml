@@ -4,7 +4,7 @@ metadata:
   labels:
     app: aprs-tracker
   name: aprs-tracker
-  namespace: wp-crm
+  namespace: wp-lorawan
 spec:
   output:
     to:
@@ -17,11 +17,11 @@ spec:
   source:
     git:
       ref: master
-      uri: git@github.com:weepee-org/wp-crm.git
+      uri: git@github.com:weepee-org/wp-lorawan.git
     contextDir: aprs-tracker/
     type: Git
     sourceSecret:
-      name: wp-crm
+      name: wp-lorawan
   strategy:
     dockerStrategy:
       from:

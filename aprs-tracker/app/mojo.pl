@@ -48,11 +48,10 @@ my $redis = Redis::Fast->new(
 
 # Helpers
 
-# log (slack / log) add papertrail later and reduce logging to slack
+# log add papertrail later
 helper log => sub {
     my $self = shift;
     my $data = shift;
-    $slack->post( text => $data );
 
     app->log->info($data);
     return;
