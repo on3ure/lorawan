@@ -2,14 +2,13 @@ apiVersion: v1
 kind: DeploymentConfig
 metadata:
   labels:
-    app: aprs-tracker
-  name: aprs-tracker
-  namespace: wp-crm
+    app: letsencrypt
+  name: letsencrypt
 spec:
   replicas: 1
   selector:
-    app: aprs-tracker
-    deploymentconfig: aprs-tracker
+    app: letsencrypt
+    deploymentconfig: letsencrypt
   strategy:
     resources: {}
     rollingParams:
@@ -23,57 +22,58 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        app: aprs-tracker
-        deploymentconfig: aprs-tracker
+        app: letsencrypt
+        deploymentconfig: letsencrypt
     spec:
       containers:
-      - image: wp-crm/aprs-tracker:latest
+      - image: wp-lorawan/letsencrypt:latest
         imagePullPolicy: Always
-        name: aprs-tracker
+        name: letsencrypt
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
           protocol: TCP
-        resources:
-          limits:
-            cpu: 250m
-            memory: 250Mi
-          requests:
-            cpu: 250m
-            memory: 250Mi
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /data
+          name: data
         livenessProbe:
           httpGet:
-            path: /healthz
-            port: 3000
+            path: /
+            port: 8080
             scheme: HTTP
-          initialDelaySeconds: 30
+          initialDelaySeconds: 3
           timeoutSeconds: 1
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /healthz
-            port: 3000
+            path: /
+            port: 8080
             scheme: HTTP
-          initialDelaySeconds: 15
+          initialDelaySeconds: 3
           timeoutSeconds: 1
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
-        terminationMessagePath: /dev/termination-log
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext: {}
       terminationGracePeriodSeconds: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: letsencrypt-data
   test: false
   triggers:
   - type: ConfigChange
   - imageChangeParams:
       automatic: true
       containerNames:
-      - aprs-tracker
+      - letsencrypt
       from:
         kind: ImageStreamTag
-        name: aprs-tracker:latest
-        namespace: wp-crm
+        name: letsencrypt:latest
+        namespace: wp-lorawan
     type: ImageChange

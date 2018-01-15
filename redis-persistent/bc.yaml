@@ -2,14 +2,14 @@ apiVersion: v1
 kind: BuildConfig
 metadata:
   labels:
-    app: aprs-tracker
-  name: aprs-tracker
-  namespace: wp-crm
+    app: redis-persistent
+  name: redis-persistent
+  namespace: wp-lorawan
 spec:
   output:
     to:
       kind: ImageStreamTag
-      name: aprs-tracker:latest
+      name: redis-persistent:latest
   resources:
     limits:
       cpu: 1
@@ -17,15 +17,15 @@ spec:
   source:
     git:
       ref: master
-      uri: git@github.com:weepee-org/wp-crm.git
-    contextDir: aprs-tracker/
+      uri: git@github.com:weepee-org/wp-lorawan.git
+    contextDir: redis-persistent/
     type: Git
     sourceSecret:
-      name: wp-crm
+      name: wp-lorawan
   strategy:
     dockerStrategy:
       from:
         kind: ImageStreamTag
-        name: mojolicious:latest
+        name: redis-persistent:latest
         namespace: wp-alpha-registry
     type: Docker

@@ -1,4 +1,4 @@
 #!/bin/bash
 
 ./build.sh redis-persistent
-./build.sh mojo
+#./build.sh mojo

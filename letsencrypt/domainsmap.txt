@@ -1,0 +1,4 @@
+# domain path name service target-port
+# test.weepee.io / test static 8080
+# ------------------------------------
+lorawan.weepee.io /aprs-tracker aprs-tracker aprs-tracker 3000-tcp

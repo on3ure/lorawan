@@ -2,14 +2,14 @@ apiVersion: v1
 kind: DeploymentConfig
 metadata:
   labels:
-    app: aprs-tracker
-  name: aprs-tracker
-  namespace: wp-crm
+    app: redis-persistent
+  name: redis-persistent
+  namespace: wp-lorawan
 spec:
   replicas: 1
   selector:
-    app: aprs-tracker
-    deploymentconfig: aprs-tracker
+    app: redis-persistent
+    deploymentconfig: redis-persistent
   strategy:
     resources: {}
     rollingParams:
@@ -23,57 +23,60 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        app: aprs-tracker
-        deploymentconfig: aprs-tracker
+        app: redis-persistent
+        deploymentconfig: redis-persistent
     spec:
       containers:
-      - image: wp-crm/aprs-tracker:latest
+      - image: wp-lorawan/redis-persistent:latest
         imagePullPolicy: Always
-        name: aprs-tracker
+        name: redis-persistent
         ports:
-        - containerPort: 3000
+        - containerPort: 6379
           protocol: TCP
         resources:
           limits:
-            cpu: 250m
-            memory: 250Mi
+            cpu: 500m
+            memory: 500Mi
           requests:
             cpu: 250m
             memory: 250Mi
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /redis
+          name: redis-data
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-            scheme: HTTP
+          tcpSocket:
+            port: 6379
           initialDelaySeconds: 30
           timeoutSeconds: 1
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-            scheme: HTTP
+          tcpSocket:
+            port: 6379
           initialDelaySeconds: 15
           timeoutSeconds: 1
           periodSeconds: 10
           successThreshold: 1
-          failureThreshold: 3
-        terminationMessagePath: /dev/termination-log
+          failureThreshold: 3 
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       securityContext: {}
       terminationGracePeriodSeconds: 30
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-data
   test: false
   triggers:
   - type: ConfigChange
   - imageChangeParams:
       automatic: true
       containerNames:
-      - aprs-tracker
+      - redis-persistent
       from:
         kind: ImageStreamTag
-        name: aprs-tracker:latest
-        namespace: wp-crm
+        name: redis-persistent:latest
+        namespace: wp-lorawan
     type: ImageChange

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis-persistent
+  name: redis-persistent
+  namespace: wp-lorawan
+spec:
+  ports:
+  - name: 6379-tcp
+    port: 6379
+    protocol: TCP
+    targetPort: 6379
+  selector:
+    app: redis-persistent
+    deploymentconfig: redis-persistent
+  sessionAffinity: None
+  type: ClusterIP
