@@ -206,7 +206,7 @@ post '/aprs-tracker/:token/feed' => sub {
     #
 
 
-    $self->log(decode_json($data));
+    $self->log($data);
     $self->render(
         json => {
             'add' => 'ok'
