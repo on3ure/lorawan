@@ -1,7 +1,7 @@
 #!/bin/bash
 
 what=$1;
-namespace="wp-crm"
+namespace="wp-lorawan"
 
 printf "\x1b[38;5;220mBuilding [${what}]\x1b[38;5;255m\n"
 printf "\x1b[38;5;104m -- oc start-build ${what}\x1b[39m\n"
