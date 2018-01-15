@@ -21,12 +21,6 @@ DISTRIBUTIONS
       Canary::Stability 2012
     requirements:
       ExtUtils::MakeMaker 0
-  Class-Accessor-Lite-0.08
-    pathname: K/KA/KAZUHO/Class-Accessor-Lite-0.08.tar.gz
-    provides:
-      Class::Accessor::Lite 0.08
-    requirements:
-      ExtUtils::MakeMaker 6.36
   Class-Data-Inheritable-0.08
     pathname: T/TM/TMTM/Class-Data-Inheritable-0.08.tar.gz
     provides:
@@ -675,27 +669,6 @@ DISTRIBUTIONS
     requirements:
       ExtUtils::MakeMaker 0
       perl 5.006
-  Furl-3.09
-    pathname: S/SY/SYOHEX/Furl-3.09.tar.gz
-    provides:
-      Furl 3.09
-      Furl::ConnectionCache undef
-      Furl::HTTP 3.09
-      Furl::Headers undef
-      Furl::Request undef
-      Furl::Response undef
-      Furl::ZlibStream undef
-    requirements:
-      Class::Accessor::Lite 0
-      Encode 0
-      HTTP::Parser::XS 0.11
-      MIME::Base64 0
-      Module::Build::Tiny 0.035
-      Mozilla::CA 0
-      Scalar::Util 0
-      Socket 0
-      Time::HiRes 0
-      perl 5.008001
   HTML-Parser-3.72
     pathname: G/GA/GAAS/HTML-Parser-3.72.tar.gz
     provides:
@@ -793,14 +766,6 @@ DISTRIBUTIONS
       ExtUtils::MakeMaker 0
       HTTP::Headers 6
       perl 5.008001
-  HTTP-Parser-XS-0.17
-    pathname: K/KA/KAZUHO/HTTP-Parser-XS-0.17.tar.gz
-    provides:
-      HTTP::Parser::XS 0.17
-      HTTP::Parser::XS::PP undef
-    requirements:
-      ExtUtils::MakeMaker 6.36
-      Test::More 0.96
   IO-HTML-1.001
     pathname: C/CJ/CJM/IO-HTML-1.001.tar.gz
     provides:
@@ -826,15 +791,6 @@ DISTRIBUTIONS
       ExtUtils::MakeMaker 0
       Net::SSLeay 1.46
       Scalar::Util 0
-  JSON-2.90
-    pathname: M/MA/MAKAMAKA/JSON-2.90.tar.gz
-    provides:
-      JSON 2.90
-      JSON::Backend::PP 2.90
-      JSON::Boolean 2.90
-    requirements:
-      ExtUtils::MakeMaker 0
-      Test::More 0
   JSON-XS-3.03
     pathname: M/ML/MLEHMANN/JSON-XS-3.03.tar.gz
     provides:
@@ -1508,19 +1464,6 @@ DISTRIBUTIONS
       ExtUtils::MakeMaker 0
       Fcntl 0
       URI 1.10
-      perl 5.008001
-  WebService-Slack-IncomingWebHook-0.02
-    pathname: M/MA/MASASUZU/WebService-Slack-IncomingWebHook-0.02.tar.gz
-    provides:
-      WebService::Slack::IncomingWebHook 0.02
-      WebService::Slack::IncomingWebHook::Script undef
-    requirements:
-      Encode 0
-      ExtUtils::CBuilder 0
-      Furl 0
-      IO::Socket::SSL 0
-      JSON 0
-      Module::Build 0.4005
       perl 5.008001
   YAML-1.19
     pathname: T/TI/TINITA/YAML-1.19.tar.gz
