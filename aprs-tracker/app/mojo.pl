@@ -16,6 +16,7 @@ use Mojo::ByteStream 'b';
 use Config::YAML;
 use boolean ':all';
 use match::simple qw(match);
+use Data::Dumper;
 
 # Environment var Mapping and fallback
 use Env qw(REDIS_PERSISTENT_SERVICE_HOST);
@@ -206,7 +207,7 @@ post '/aprs-tracker/:token/feed' => sub {
     #
 
 
-    $self->log($data);
+    $self->log(Dumper $data);
     $self->render(
         json => {
             'add' => 'ok'
