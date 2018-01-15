@@ -149,7 +149,7 @@ get '/healthz' => sub {
     }
 };
 
-post '/:token/feed/aprs-tracker' => sub {
+post '/aprs-tracker/:token/feed' => sub {
     my $self = shift;
 
     # reder when we are done
