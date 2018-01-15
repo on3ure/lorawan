@@ -1,7 +1,11 @@
 #include "TinyGPS++.h"
-#include <LoRaWan.h>
+#include <LoRaWanPlus.h>
 
-#define DEFAULT_RESPONSE_TIMEOUT 5
+#define DEFAULT_RESPONSE_TIMEOUT 15
+
+// 0-26 pins
+#define BLUELED 14 
+#define GREENLED 16 
 
 TinyGPSPlus gps;
 
@@ -17,13 +21,28 @@ floatArr2Val latlong;
 static void smartdelay(unsigned long ms);
 
 void setup() {
-  SerialUSB.begin(115200);
-  // For debugging
-  // while(!SerialUSB);
+    SerialUSB.begin(115200);
 
+      lora.init();
+
+
+
+
+  // enable power to grove components
+  digitalWrite(38, HIGH);
+
+               pinMode(GREENLED, OUTPUT);
+      pinMode(BLUELED, OUTPUT);
+
+
+
+
+
+
+  
+ 
   Serial.begin(9600);
 
-  lora.init();
 
   memset(buffer, 0, 256);
   lora.getVersion(buffer, 256, 1);
@@ -51,12 +70,10 @@ void setup() {
   lora.setDutyCycle(false);
   lora.setJoinDutyCycle(false);
 
-  lora.setPower(14);
+  // 0 > 10dbm // 14 RFU
+  lora.setPower(0);
 
-  while (!lora.setOTAAJoin(JOIN))
-    ;
-
-  SerialUSB.print("Testing TinyGPS++");
+  while (!lora.setOTAAJoin(JOIN));
 }
 
 void loop() {
@@ -67,49 +84,37 @@ void loop() {
     SerialUSB.println(gps.altitude.meters());
 
   if (gps.location.isUpdated()) {
-    SerialUSB.print("LAT=");
+    SerialUSB.print("+++LAT=");
     SerialUSB.print(gps.location.lat(), 6);
-    SerialUSB.print("LNG=");
+    SerialUSB.print("+++LNG=");
     SerialUSB.println(gps.location.lng(), 6);
 
     latlong.f[0] = gps.location.lat();
     latlong.f[1] = gps.location.lng();
 
-    SerialUSB.println("LatLong: ");
-    for (int i = 0; i < 8; i++) {
-      SerialUSB.print(latlong.bytes[i], HEX);
-    }
-    SerialUSB.println("");
+        digitalWrite(BLUELED, HIGH);
+
     result = lora.transferPacket(latlong.bytes, 8, DEFAULT_RESPONSE_TIMEOUT);
 
   } else {
-    SerialUSB.println("No GPS Location");
-    result = lora.transferPacket("No GPS Location", 10);
+        digitalWrite(BLUELED, LOW);
+    SerialUSB.println("+++No GPS Location");
+latlong.f[0] = 0;
+    latlong.f[1] = 0;
+
+    result = lora.transferPacketWithConfirmed(latlong.bytes, 8, DEFAULT_RESPONSE_TIMEOUT);
   }
 
-  if (result) {
-    short length;
-    short rssi;
-
-    memset(buffer, 0, 256);
-    length = lora.receivePacket(buffer, 256, &rssi);
-
-    if (length) {
-      SerialUSB.print("Length is: ");
-      SerialUSB.println(length);
-      SerialUSB.print("RSSI is: ");
-      SerialUSB.println(rssi);
-      SerialUSB.print("Data is: ");
-      for (unsigned char i = 0; i < length; i++) {
-        SerialUSB.print("0x");
-        SerialUSB.print(buffer[i], HEX);
-        SerialUSB.print(" ");
-      }
-      SerialUSB.println();
+  if (!result) {
+      // failed message we are not joined anymore
+      SerialUSB.println("+++RE-Joining Network");
+        digitalWrite(GREENLED, LOW);
+        setup();
+    } else {
+        digitalWrite(GREENLED, HIGH);
     }
-  }
 
-  smartdelay(1000);
+  smartdelay(6000);
 }
 
 static void smartdelay(unsigned long ms) {
@@ -119,3 +124,4 @@ static void smartdelay(unsigned long ms) {
       gps.encode(Serial.read());
   } while (millis() - start < ms);
 }
+
