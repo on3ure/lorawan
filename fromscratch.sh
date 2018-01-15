@@ -1,12 +1,12 @@
 #!/bin/bash
 
 printf "\x1b[38;5;220mNew project\x1b[38;5;255m\n"
-oc new-project wp-crm \
+oc new-project wp-lorawan \
     --description="Weepee LoRaWAN Services" \
     --display-name="[*] [wp] LoRaWAN Services"
 
 printf "\x1b[38;5;220mNew secrets\x1b[38;5;255m\n"
-oc secrets new-sshauth wp-crm --ssh-privatekey=keys/wp-lorawan
+oc secrets new-sshauth wp-lorawan --ssh-privatekey=keys/wp-lorawan
 oc secrets add serviceaccount/builder secrets/wp-lorawan
 
 printf "\x1b[38;5;220mQuota\x1b[38;5;255m\n"
@@ -24,7 +24,7 @@ oc create -f redis-persistent/pvc.yaml
 if [ "$1" -gt "restore" ]; then
   printf "\x1b[38;5;220mRestore\x1b[38;5;255m\n"
   printf "\x1b[38;5;104m -- oc create -f pvc-transfer/restore.yaml\x1b[38;5;255m\n"
-  namespace="wp-crm"
+  namespace="wp-lorawan"
   pod=$(oc create -f pvc-transfer/restore.yaml -o name -n ${namespace})
   tail=255
   while [ "${tail}" != "0" ]
