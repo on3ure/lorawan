@@ -16,10 +16,6 @@ use Mojo::ByteStream 'b';
 use Config::YAML;
 use boolean ':all';
 use match::simple qw(match);
-use WebService::Slack::IncomingWebHook;
-
-use lib './Weepee-TeamLeader/lib/';
-use Weepee::TeamLeader;
 
 # Environment var Mapping and fallback
 use Env qw(REDIS_PERSISTENT_SERVICE_HOST);
@@ -31,19 +27,6 @@ my $mojoconfig = plugin Config => { file => 'mojo.conf' };
 
 # YAML based config
 my $config = Config::YAML->new( config => "config.yaml" );
-
-# Slack config
-my $slack = WebService::Slack::IncomingWebHook->new(
-    webhook_url => $config->{slack}->{webhook},
-    channel     => '#' . $config->{slack}->{channel},
-    username    => $config->{slack}->{username},
-    icon_url =>
-'https://media.glassdoor.com/sqll/1045146/teamleader-squarelogo-1472476059736.png',
-);
-
-# TeamLeader Config
-my $tl = new Weepee::TeamLeader( $config->{teamleader}->{id},
-    $config->{teamleader}->{token} );
 
 # Plugins
 plugin 'sentry' => {
@@ -167,7 +150,7 @@ get '/healthz' => sub {
     }
 };
 
-post '/api/teamleader/:token/company/add' => sub {
+post '/:token/feed/aprs-tracker' => sub {
     my $self = shift;
 
     # reder when we are done
@@ -181,138 +164,53 @@ post '/api/teamleader/:token/company/add' => sub {
     return unless $appuser;
 
     my $data = $self->req->json;
-    my $tldata =
-      $tl->get( 'getCompany', { 'company_id' => $data->{object_id} } );
-    my $taxcode = $tldata->{taxcode};
-    my $email   = $tldata->{email};
-    $taxcode =~ tr/a-zA-Z0-9//cd;
-    $tldata->{company_id} = $data->{object_id};
+#
+#    $redis->set( "teamleader-taxcode-" . $taxcode, encode_json $tldata)
+#      if $taxcode;
+#    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
+#      if ( $email && !$taxcode );
+#    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
+#      if ( $email && !$redis->get( "teamleader-email-" . $email ) );
+#
+#    if (
+#          !$taxcode
+#        && $email
+#        && !(
+#            match(
+#                $email, $redis->lrange( "teamleader-customers-email", 0, -1 )
+#            )
+#        )
+#      )
+#    {
+#        $redis->rpush( "teamleader-customers-email",     $email );
+#        $redis->rpush( "teamleader-customers-email-add", $email );
+#    }
+#
+#    if (
+#        $taxcode
+#        && !(
+#            match(
+#                $taxcode,
+#                $redis->lrange( "teamleader-customers-taxcode", 0, -1 )
+#            )
+#        )
+#      )
+#    {
+#        $redis->rpush( "teamleader-customers-taxcode",     $taxcode );
+#        $redis->rpush( "teamleader-customers-taxcode-add", $taxcode );
+#    }
 
-    $redis->set( "teamleader-taxcode-" . $taxcode, encode_json $tldata)
-      if $taxcode;
-    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
-      if ( $email && !$taxcode );
-    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
-      if ( $email && !$redis->get( "teamleader-email-" . $email ) );
+#    $self->log( '[' . __LINE__ . '][' . $appuser . '] add [' . $email . ']' )
+#      if ( $email && !$taxcode );
+#    $self->log( '[' . __LINE__ . '][' . $appuser . '] add [' . $taxcode . ']' )
+#      if $taxcode;
+    #
 
-    if (
-          !$taxcode
-        && $email
-        && !(
-            match(
-                $email, $redis->lrange( "teamleader-customers-email", 0, -1 )
-            )
-        )
-      )
-    {
-        $redis->rpush( "teamleader-customers-email",     $email );
-        $redis->rpush( "teamleader-customers-email-add", $email );
-    }
 
-    if (
-        $taxcode
-        && !(
-            match(
-                $taxcode,
-                $redis->lrange( "teamleader-customers-taxcode", 0, -1 )
-            )
-        )
-      )
-    {
-        $redis->rpush( "teamleader-customers-taxcode",     $taxcode );
-        $redis->rpush( "teamleader-customers-taxcode-add", $taxcode );
-    }
-
-    $self->log( '[' . __LINE__ . '][' . $appuser . '] add [' . $email . ']' )
-      if ( $email && !$taxcode );
-    $self->log( '[' . __LINE__ . '][' . $appuser . '] add [' . $taxcode . ']' )
-      if $taxcode;
+    $self->log(decode_json($data));
     $self->render(
         json => {
             'add' => 'ok'
-        }
-    );
-};
-
-post '/api/teamleader/:token/company/change' => sub {
-    my $self = shift;
-
-    # reder when we are done
-    $self->render_later;
-
-    # add securityheaders
-    $self->securityheaders;
-
-    # authenticate
-    my $appuser = $self->auth;
-    return unless $appuser;
-
-    my $data = $self->req->json;
-    my $tldata =
-      $tl->get( 'getCompany', { 'company_id' => $data->{object_id} } );
-    my $taxcode = $tldata->{taxcode};
-    my $email   = $tldata->{email};
-    $taxcode =~ tr/a-zA-Z0-9//cd;
-    $tldata->{company_id} = $data->{object_id};
-
-    $redis->set( "teamleader-taxcode-" . $taxcode, encode_json $tldata)
-      if $taxcode;
-    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
-      if ( $email && !$taxcode );
-    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
-      if ( $email && !$redis->get( "teamleader-email-" . $email ) );
-    $redis->rpush( "teamleader-customers-taxcode-change", $taxcode )
-      if $taxcode;
-    $redis->rpush( "teamleader-customers-email-change", $email )
-      if ( $email && !$taxcode );
-    $redis->rpush( "teamleader-customers-email-change", $email )
-      if ( $email && !$redis->get( "teamleader-email-" . $email ) );
-
-    $self->log( '[' . __LINE__ . '][' . $appuser . '] change [' . $email . ']' )
-      if ( $email && !$taxcode );
-    $self->log(
-        '[' . __LINE__ . '][' . $appuser . '] change [' . $taxcode . ']' )
-      if $taxcode;
-    $self->render(
-        json => {
-            'change' => 'ok'
-        }
-    );
-};
-
-post '/api/teamleader/:token/company/remove' => sub {
-    my $self = shift;
-
-    # reder when we are done
-    $self->render_later;
-
-    # add securityheaders
-    $self->securityheaders;
-
-    # authenticate
-    my $appuser = $self->auth;
-    return unless $appuser;
-
-    my $data = $self->req->json;
-    my $tldata =
-      $tl->get( 'getCompany', { 'company_id' => $data->{object_id} } );
-    my $taxcode = $tldata->{taxcode};
-    my $email   = $tldata->{email};
-    $taxcode =~ tr/a-zA-Z0-9//cd;
-
-    $redis->del( "teamleader-taxcode-" . $taxcode ) if $taxcode;
-    $redis->del( "teamleader-email-" . $email ) if ( $email && !$taxcode );
-
-    # remove from list TODO
-
-    $self->log( '[' . __LINE__ . '][' . $appuser . '] remove [' . $email . ']' )
-      if ( $email && !$taxcode );
-    $self->log(
-        '[' . __LINE__ . '][' . $appuser . '] remove [' . $taxcode . ']' )
-      if $taxcode;
-    $self->render(
-        json => {
-            'remove' => 'ok'
         }
     );
 };
