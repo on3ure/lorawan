@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: teamleader
+  name: teamleader
+  namespace: wp-crm
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: teamleader:latest
+  resources:
+    limits:
+      cpu: 1
+      memory: "256Mi"
+  source:
+    git:
+      ref: master
+      uri: git@github.com:weepee-org/wp-crm.git
+    contextDir: teamleader/
+    type: Git
+    sourceSecret:
+      name: wp-crm
+  strategy:
+    dockerStrategy:
+      from:
+        kind: ImageStreamTag
+        name: mojolicious:latest
+        namespace: wp-alpha-registry
+    type: Docker

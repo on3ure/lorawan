@@ -1,0 +1,48 @@
+---
+securityheaders-openshift:
+  Access-Control-Allow-Headers: 'Content-Type, X-CSRF-Token'
+  Access-Control-Allow-Methods: 'GET, OPTIONS, POST, DELETE, PUT'
+  Access-Control-Allow-Origin: '*'
+  Access-Control-Max-Age: 1728000
+  Content-Security-Policy: "default-src https: data: 'unsafe-inline' 'unsafe-eval'"
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-Xss-Protection: 1; mode=block
+securityheaders-development:
+  Access-Control-Allow-Headers: 'Content-Type, X-CSRF-Token'
+  Access-Control-Allow-Methods: 'GET, OPTIONS, POST, DELETE, PUT'
+  Access-Control-Allow-Origin: '*'
+  Access-Control-Max-Age: 1728000
+  Content-Security-Policy: "default-src http: data: 'unsafe-inline' 'unsafe-eval'"
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  X-Xss-Protection: 1; mode=block
+tokens:
+  a58756ace5f811e5a6a3b8aeed7dbe83: joeri
+  381cdc5f34e54fe6b03c7a82658c1c09: updateall
+  126aa1ae60b947e79ab25c807fa1c100: teamleader
+  671de92ea5eb47f585ab315b16c90cf9: webshop
+  35a736c125f4493e96b3effce1577af8: wp-crm-tasks
+  ebb9b76cfb90437aa31961366858e32e: v1-import
+  b3c357968f9e4e07bb708b0d7c93d39c: v1-autoinvoice
+  8791254790ac4d7893d87efa9e06a68e: v1-newpro
+debug: false
+# if not found keep one month
+expire-error: 2592000
+# if found keep 90 dagen
+expire-valid: 7776000
+teamleader:
+  id: 33134
+  token: iaUrqwxUX6CuYH9tjIcCYbqy4K3O5t9dtTuKfSu3OXoCunWEWY6L0m9UX3zTmyWGhhgnZBhEov7IJTdwI97ym7ja0ITd7FKeNRsCiz7wV45uN8Ql8OKkLTlCs4FpAfudWMG4cDrXxmiblZnjDXtfHFHZzce0iy45bAZd4h0su9tFYGOru8x1D4Q36UTfjOakf0na7esr
+sentry:
+  dsn: https://95e490863303484fb9b6b52896f49164:b38b1640bfcd44ad93806a91f3c8e16e@sentry.io/123269
+slack:
+  webhook: https://hooks.slack.com/services/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
+  channel: admin
+  username: wp-crm/teamleader
+environment: openshift
+openshift:
+  namespace: wp-crm
+appsecret: 'alo alo this is ure calling for a very secret message to tell you ... sst'

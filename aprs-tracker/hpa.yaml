@@ -1,0 +1,15 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: teamleader
+  name: teamleader
+  namespace: wp-crm
+spec:
+  maxReplicas: 4
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: DeploymentConfig
+    name: teamleader
+  targetCPUUtilizationPercentage: 80

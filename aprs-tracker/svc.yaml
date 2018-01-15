@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: teamleader
+  name: teamleader
+  namespace: wp-crm
+spec:
+  ports:
+  - name: 3000-tcp
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: teamleader
+    deploymentconfig: teamleader
+  sessionAffinity: None
+  type: ClusterIP

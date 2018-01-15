@@ -1,0 +1,38 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Weepee 1212 Lookup
+  description: |
+    Looks up a number and returns some json
+schemes:
+  - https
+host: 1212.voice.weepee.io
+basePath: /
+produces:
+  - application/json
+paths:
+  /{token}/lookup/{number}:
+    parameters:
+      - name: token
+        in: path
+        description: authentication token
+        type: string
+        required: true
+      - name: number
+        in: path
+        description: belgian telephone number in e164 format (32xxxxx)
+        type: number
+        required: true
+    get:
+      responses:
+        200:
+          schema:
+            type: object
+            properties:
+              operator:
+                type: string
+              type:
+                type: string
+              route:
+                type: string
+          description: 1212 details

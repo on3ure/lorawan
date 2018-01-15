@@ -1,0 +1,13 @@
+requires 'Config::YAML';
+requires 'Mojo::ByteStream';
+requires 'Mojo::DOM';
+requires 'Mojo::JSON';
+requires 'Mojo::UserAgent';
+requires 'Mojolicious::Lite';
+requires 'Mojolicious::Plugin::RenderFile';
+requires 'Mojolicious::Plugin::Sentry';
+requires 'Redis::Fast';
+requires 'WebService::Slack::IncomingWebHook';
+requires 'boolean';
+requires 'match::simple';
+requires 'perl', 'v5.10.0';
