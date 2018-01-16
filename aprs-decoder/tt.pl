@@ -22,6 +22,7 @@ $port = 14580;
 $callsign = "ON3URE-1";
 $pass = "23996"; # can be computed with aprspass
 #$coord = "4738.48N/01818.15E/k";
+$coord = "5057.41N/00414.30Ev";
 $altInFeet = 502;
 $comment = "received with LoRa";
 

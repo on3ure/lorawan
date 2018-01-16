@@ -198,7 +198,7 @@ post '/aprs-tracker/:token/feed' => sub {
         PeerPort => $port,
         Proto    => 'tcp'
     );
-    die("Could not create socket: $!\n") unless $sock;
+    $self->log("Could not create socket: $!\n") unless $sock;
 
     my $recv_data;
 
@@ -214,6 +214,7 @@ post '/aprs-tracker/:token/feed' => sub {
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
     my $message = sprintf( "%s>APRS,TCPIP*:@%02d%02d%02dz%s/A=%06d %s\n",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
+    $self->log($message);
     print $sock $message;
     close($sock);
 
