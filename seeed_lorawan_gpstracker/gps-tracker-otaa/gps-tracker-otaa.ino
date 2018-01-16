@@ -1,18 +1,23 @@
-#include <LoRaWan.h>
+#include <LoRaWanURE.h>
 #include <TimerTCC0.h>
 #include <TinyGPS++.h>
 
+// 2nd receive freq
 #define FREQ_RX_WNDW_SCND_EU 869.525
-const float EU_hybrid_channels[8] = {868.1, 868.3, 868.5, 867.1,
-                                     867.3, 867.5, 867.7, 867.9};
-#define DOWNLINK_DATA_RATE_EU DR3
-#define EU_RX_DR DR8
-#define UPLINK_DATA_RATE_MAX_EU DR5
+
+// Transmit Power
 #define MAX_EIRP_NDX_EU 14
-#define UPLINK_DATA_RATE_MIN DR0
+
+// Downlink Data RATE
+#define DOWNLINK_DATA_RATE_EU DR3
+
+// Default response timeout
 #define DEFAULT_RESPONSE_TIMEOUT 5
 
+// Blue LED
 #define BLUELED 14
+
+// Green LED
 #define GREENLED 16
 
 char buffer[128] = {0};
@@ -21,9 +26,9 @@ int sec = 0;
 // The TinyGPS++ object
 TinyGPSPlus gps;
 typedef union {
-  float f[2]; 
+  float f[3]; 
   unsigned char
-      bytes[8]; 
+      bytes[12]; 
 } floatArr2Val;
 
 floatArr2Val latlong;
@@ -41,10 +46,12 @@ void setHybridForTTN(const float *channels) {
 }
 
 void displayInfo() {
-  SerialUSB.print(F("++Location: "));
+  SerialUSB.print("++Location: ");
   SerialUSB.print(latlong.f[0], 6);
-  SerialUSB.print(F(","));
+  SerialUSB.print(",");
   SerialUSB.print(latlong.f[1], 6);
+  SerialUSB.print(" Latitude: ");
+  SerialUSB.print(latlong.f[2], 6);
   SerialUSB.println();
 }
 
@@ -67,7 +74,7 @@ void setupLoRaOTAA() {
   lora.getId(buffer, 256, 1);
   SerialUSB.print(buffer);
 
- // void setId(char *DevAddr, char *DevEUI, char *AppEUI);
+  // void setId(char *DevAddr, char *DevEUI, char *AppEUI);
   lora.setId(NULL, "00C14D75CFD10491", "70B3D57ED0009548");
   //lora.setId(NULL, NULL, "70B3D57ED00094C3");
   // setKey(char *NwkSKey, char *AppSKey, char *AppKey);
@@ -76,24 +83,17 @@ void setupLoRaOTAA() {
 
   if (lora.setDeviceMode(LWOTAA) == false)               // Over The Air Activation
       SerialUSB.print("++Set Mode to OTAA failed.\n");
-    else
+  else
       SerialUSB.print("++OTAA mode set.\n");
 
-  //lora.setDataRate(DR5, EU868);
   lora.setAdaptiveDataRate(true);
-    lora.setPower(14);
-
-  //setHybridForTTN(EU_hybrid_channels);
-  //lora.setReceiveWindowFirst(0, 868.1);
-  lora.setReceiveWindowSecond(869.525, DR3);
-
-  //lora.setDutyCycle(false);
-  //lora.setJoinDutyCycle(false);
+  lora.setPower(MAX_EIRP_NDX_EU);
+  lora.setReceiveWindowSecond(FREQ_RX_WNDW_SCND_EU, DOWNLINK_DATA_RATE_EU);
+ 
+  
   while(true) {
       if (lora.setOTAAJoin(JOIN))
         break;
-//      lora.getChannel();
-//      lora.getReceiveWindowFirst();
     }
 }
 
@@ -131,6 +131,7 @@ void loop() {
         longitude != latlong.f[1]) {
       latlong.f[0] = latitude;
       latlong.f[1] = longitude;
+      latlong.f[2] = gps.altitude.meters();
 
       SerialUSB.print("++sendPacket LatLong: ");
       for (int i = 0; i < 8; i++) {

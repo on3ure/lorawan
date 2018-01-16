@@ -25,9 +25,9 @@ int sec = 0;
 
 TinyGPSPlus gps;
 typedef union {
-  float f[2]; 
+  float f[3]; 
   unsigned char
-      bytes[8]; 
+      bytes[12]; 
 } floatArr2Val;
 
 floatArr2Val latlong;
@@ -36,10 +36,12 @@ float latitude;
 float longitude;
 
 void displayInfo() {
-  SerialUSB.print(F("++Location: "));
+  SerialUSB.print("++Location: ");
   SerialUSB.print(latlong.f[0], 6);
-  SerialUSB.print(F(","));
+  SerialUSB.print(",");
   SerialUSB.print(latlong.f[1], 6);
+  SerialUSB.print(" Latitude: ");
+  SerialUSB.print(latlong.f[2], 6);
   SerialUSB.println();
 }
 
