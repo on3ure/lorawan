@@ -168,7 +168,7 @@ post '/aprs-tracker/:token/feed' => sub {
     my $data = $self->req->json;
 
     $self->log( $data->{hardware_serial} );
-    $self->log( $data->{payload_fields} );
+    $self->log( Dumper $data->{payload_fields} );
 
     my ( $degreesn, $minutesn, $secondsn, $signn ) =
       decimal2dms( $data->{payload_fields}{latitude} );
@@ -183,6 +183,8 @@ post '/aprs-tracker/:token/feed' => sub {
         $degreesn, $minutesn, $secondsn, $degreese,
         $minutese, $secondse, $type
     );
+
+    $self->log($coord);
 
     my $aprsServer = "finland.aprs2.net";
     my $port       = 14580;
