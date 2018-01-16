@@ -167,16 +167,13 @@ post '/aprs-tracker/:token/feed' => sub {
 
     my $data = $self->req->json;
 
-    $self->log( $data->{hardware_serial} );
-    $self->log( Dumper $data->{payload_fields} );
-
     my ( $degreesn, $minutesn, $secondsn, $signn ) =
       decimal2dms( $data->{payload_fields}{latitude} );
     my ( $degreese, $minutese, $secondse, $signe ) =
       decimal2dms( $data->{payload_fields}{longitude} );
 
     my $type = ">"; #default car
-    $type = "v" if $config->{lora}{$data->{hardware_serial}}{type} eq "car";
+    $type = "v" if $config->{lora}{$data->{hardware_serial}}{type} eq "van";
     $type = "k" if $config->{lora}{$data->{hardware_serial}}{type} eq "pickup";
 
     my $coord = sprintf(
@@ -190,6 +187,7 @@ post '/aprs-tracker/:token/feed' => sub {
     my $callsign   = $config->{lora}{$data->{hardware_serial}}{callsign};
     my $pass       = $config->{lora}{$data->{hardware_serial}}{password};               # can be computed with aprspass
     my $altInFeet = $data->{payload_fields}{altitude};
+    $altInFeet = 1 if $altInFeet eq 0;
     my $comment = "received with LoRa";
 
     my $sock = new IO::Socket::INET(
