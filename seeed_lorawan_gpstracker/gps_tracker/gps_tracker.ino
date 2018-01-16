@@ -53,8 +53,7 @@ void setup() {
 
   lora.setPower(14);
 
-  while (!lora.setOTAAJoin(JOIN))
-    ;
+  while (!lora.setOTAAJoin(JOIN));
 
   SerialUSB.print("Testing TinyGPS++");
 }
@@ -107,6 +106,9 @@ void loop() {
       }
       SerialUSB.println();
     }
+  } else {
+      delay(30000);
+      while (!lora.setOTAAJoin(JOIN));
   }
 
   smartdelay(1000);
