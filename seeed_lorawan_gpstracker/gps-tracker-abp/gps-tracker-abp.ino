@@ -1,24 +1,28 @@
-#include <LoRaWan.h>
+#include <LoRaWanURE.h>
 #include <TimerTCC0.h>
 #include <TinyGPS++.h>
 
+// 2nd receive freq
 #define FREQ_RX_WNDW_SCND_EU 869.525
-const float EU_hybrid_channels[8] = {868.1, 868.3, 868.5, 867.1,
-                                     867.3, 867.5, 867.7, 867.9};
-#define DOWNLINK_DATA_RATE_EU DR3
-#define EU_RX_DR DR8
-#define UPLINK_DATA_RATE_MAX_EU DR5
+
+// Transmit Power
 #define MAX_EIRP_NDX_EU 14
-#define UPLINK_DATA_RATE_MIN DR0
+
+// Downlink Data RATE
+#define DOWNLINK_DATA_RATE_EU DR3
+
+// Default response timeout
 #define DEFAULT_RESPONSE_TIMEOUT 5
 
+// Blue LED
 #define BLUELED 14
+
+// Green LED
 #define GREENLED 16
 
 char buffer[128] = {0};
 int sec = 0;
 
-// The TinyGPS++ object
 TinyGPSPlus gps;
 typedef union {
   float f[2]; 
@@ -30,15 +34,6 @@ floatArr2Val latlong;
 
 float latitude;
 float longitude;
-
-void setHybridForTTN(const float *channels) {
-  for (int i = 0; i < 8; i++) {
-    if (channels[i] != 0) {
-      lora.setChannel(i, channels[i], UPLINK_DATA_RATE_MIN,
-                      UPLINK_DATA_RATE_MAX_EU);
-    }
-  }
-}
 
 void displayInfo() {
   SerialUSB.print(F("++Location: "));
@@ -75,13 +70,8 @@ void setupLoRaABP() {
 
   lora.setDeviceMode(LWABP);
   lora.setAdaptiveDataRate(true);
-  //lora.setDataRate(DR0, EU868);
   lora.setPower(MAX_EIRP_NDX_EU);
-  //setHybridForTTN(EU_hybrid_channels);
-  //lora.setReceiveWindowFirst(0, EU_hybrid_channels[0]);
   lora.setReceiveWindowSecond(FREQ_RX_WNDW_SCND_EU, DOWNLINK_DATA_RATE_EU);
-  //lora.setDutyCycle(false);
-  //lora.setJoinDutyCycle(false);
 }
 
 void setup() {
@@ -116,8 +106,10 @@ void loop() {
     longitude = gps.location.lng();
     if ((latitude && longitude) && latitude != latlong.f[0] &&
         longitude != latlong.f[1]) {
+      digitalWrite(BLUELED, HIGH);
       latlong.f[0] = latitude;
       latlong.f[1] = longitude;
+      latlong.f[2] = gps.altitude.meters();
 
       SerialUSB.print("++sendPacket LatLong: ");
       for (int i = 0; i < 8; i++) {
@@ -126,7 +118,6 @@ void loop() {
       SerialUSB.println();
       bool result =
           lora.transferPacket(latlong.bytes, 8, DEFAULT_RESPONSE_TIMEOUT);
-      digitalWrite(BLUELED, HIGH);
     } else {
       digitalWrite(BLUELED, LOW);
     }

@@ -18,8 +18,10 @@ function Bytes2Float32(bytes) {
 function Decoder(bytes, port) {
 	var lat = bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
 	var lon = bytes[7] << 24 | bytes[6] << 16 | bytes[5] << 8 | bytes[4];
+	var alt = bytes[11] << 24 | bytes[10] << 16 | bytes[9] << 8 | bytes[8];
 	return{
 		latitude:  Bytes2Float32(lat),
 		longitude: Bytes2Float32(lon)
+		altitude: Bytes2Float32(alt)
 	};
 }
