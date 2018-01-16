@@ -170,9 +170,9 @@ post '/aprs-tracker/:token/feed' => sub {
     $self->log( $data->{hardware_serial} );
     $self->log( $data->{payload_fields} );
 
-    my ( $degreesn, $minutesn, $secondsn, $sign ) =
+    my ( $degreesn, $minutesn, $secondsn, $signn ) =
       decimal2dms( $data->{payload_fields}{latitude} );
-    my ( $degreese, $minutese, $secondse, $sign ) =
+    my ( $degreese, $minutese, $secondse, $signe ) =
       decimal2dms( $data->{payload_fields}{longtitude} );
 
     #k =>pickup > =>car v => van
@@ -189,7 +189,7 @@ post '/aprs-tracker/:token/feed' => sub {
     my $callsign   = "ON3URE-1";
     my $pass       = "23996";               # can be computed with aprspass
     my $altInFeet = $data->{payload_fields}{altitude};
-    $comment = "received with LoRa";
+    my $comment = "received with LoRa";
 
     my $sock = new IO::Socket::INET(
         PeerAddr => $aprsServer,
@@ -197,6 +197,8 @@ post '/aprs-tracker/:token/feed' => sub {
         Proto    => 'tcp'
     );
     die("Could not create socket: $!\n") unless $sock;
+
+    my $recv_data;
 
     $sock->recv( $recv_data, 1024 );
 
