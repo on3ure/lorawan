@@ -206,7 +206,7 @@ post '/aprs-tracker/:token/feed' => sub {
 #      if $taxcode;
     #
 
-    $self->log($data->{dev_id})
+    $self->log($data->{dev_id});
 
     $self->log(Dumper $data);
     $self->render(
