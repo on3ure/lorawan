@@ -206,13 +206,17 @@ post '/aprs-tracker/:token/feed' => sub {
     $sock->recv( $recv_data, 1024 );
     if ( $recv_data !~ /^# logresp $callsign verified.*/ ) {
         $self->log("Error: invalid response from server: $recv_data");
+    } else {
+      $self->log("RESP: $recv_data");
     }
 
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
-    my $message = sprintf( "%s>APRS,TCPIP*:@%02d%02d%02dz%s/A=%06d %s",
+    my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dz%s/A=%06d %s",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
     $self->log("beacon sent:" . $message);
     print $sock $message . "\n";
+    $sock->recv( $recv_data, 1024 );
+    $self->log("RESP: $recv_data");
     close($sock);
 
     $self->render(
