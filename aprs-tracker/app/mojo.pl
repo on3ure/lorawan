@@ -173,7 +173,7 @@ post '/aprs-tracker/:token/feed' => sub {
     my ( $degreesn, $minutesn, $secondsn, $signn ) =
       decimal2dms( $data->{payload_fields}{latitude} );
     my ( $degreese, $minutese, $secondse, $signe ) =
-      decimal2dms( $data->{payload_fields}{longtitude} );
+      decimal2dms( $data->{payload_fields}{longitude} );
 
     #k =>pickup > =>car v => van
     my $type = "v";
