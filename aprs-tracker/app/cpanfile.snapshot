@@ -669,6 +669,13 @@ DISTRIBUTIONS
     requirements:
       ExtUtils::MakeMaker 0
       perl 5.006
+  Geo-Coordinates-DecimalDegrees-0.09
+    pathname: W/WA/WALTMAN/Geo-Coordinates-DecimalDegrees-0.09.tar.gz
+    provides:
+      Geo::Coordinates::DecimalDegrees 0.09
+    requirements:
+      ExtUtils::MakeMaker 0
+      Test::Number::Delta 0
   HTML-Parser-3.72
     pathname: G/GA/GAAS/HTML-Parser-3.72.tar.gz
     provides:
@@ -1334,6 +1341,19 @@ DISTRIBUTIONS
       Test::Builder 0
       Try::Tiny 0.07
       strict 0
+      warnings 0
+  Test-Number-Delta-1.06
+    pathname: D/DA/DAGOLDEN/Test-Number-Delta-1.06.tar.gz
+    provides:
+      Test::Number::Delta 1.06
+    requirements:
+      Carp 0
+      Exporter 0
+      ExtUtils::MakeMaker 6.17
+      Test::Builder 0
+      perl 5.006
+      strict 0
+      vars 0
       warnings 0
   Try-Tiny-0.27
     pathname: E/ET/ETHER/Try-Tiny-0.27.tar.gz

@@ -1,4 +1,5 @@
 requires 'Config::YAML';
+requires 'Geo::Coordinates::DecimalDegrees';
 requires 'Mojo::ByteStream';
 requires 'Mojo::DOM';
 requires 'Mojo::JSON';
