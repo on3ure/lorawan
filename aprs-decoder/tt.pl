@@ -17,7 +17,6 @@ print $coord . "\n";
 
 
 
-
 $aprsServer = "finland.aprs2.net";
 $port = 14580;
 $callsign = "ON3URE-1";

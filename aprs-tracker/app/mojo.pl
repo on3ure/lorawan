@@ -17,6 +17,8 @@ use Config::YAML;
 use boolean ':all';
 use match::simple qw(match);
 use Data::Dumper;
+use IO::Socket;
+use Geo::Coordinates::DecimalDegrees;
 
 # Environment var Mapping and fallback
 use Env qw(REDIS_PERSISTENT_SERVICE_HOST);
@@ -164,51 +166,55 @@ post '/aprs-tracker/:token/feed' => sub {
     return unless $appuser;
 
     my $data = $self->req->json;
-#
-#    $redis->set( "teamleader-taxcode-" . $taxcode, encode_json $tldata)
-#      if $taxcode;
-#    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
-#      if ( $email && !$taxcode );
-#    $redis->set( "teamleader-email-" . $email, encode_json $tldata)
-#      if ( $email && !$redis->get( "teamleader-email-" . $email ) );
-#
-#    if (
-#          !$taxcode
-#        && $email
-#        && !(
-#            match(
-#                $email, $redis->lrange( "teamleader-customers-email", 0, -1 )
-#            )
-#        )
-#      )
-#    {
-#        $redis->rpush( "teamleader-customers-email",     $email );
-#        $redis->rpush( "teamleader-customers-email-add", $email );
-#    }
-#
-#    if (
-#        $taxcode
-#        && !(
-#            match(
-#                $taxcode,
-#                $redis->lrange( "teamleader-customers-taxcode", 0, -1 )
-#            )
-#        )
-#      )
-#    {
-#        $redis->rpush( "teamleader-customers-taxcode",     $taxcode );
-#        $redis->rpush( "teamleader-customers-taxcode-add", $taxcode );
-#    }
 
-#    $self->log( '[' . __LINE__ . '][' . $appuser . '] add [' . $email . ']' )
-#      if ( $email && !$taxcode );
-#    $self->log( '[' . __LINE__ . '][' . $appuser . '] add [' . $taxcode . ']' )
-#      if $taxcode;
-    #
+    $self->log( $data->{hardware_serial} );
+    $self->log( $data->{payload_fields} );
 
-    $self->log($data->{dev_id});
+    my ( $degreesn, $minutesn, $secondsn, $sign ) =
+      decimal2dms( $data->{payload_fields}{latitude} );
+    my ( $degreese, $minutese, $secondse, $sign ) =
+      decimal2dms( $data->{payload_fields}{longtitude} );
 
-    $self->log(Dumper $data);
+    #k =>pickup > =>car v => van
+    my $type = "v";
+
+    my $coord = sprintf(
+        "%02d%02d.%02dN/%03d%02d.%02dE%1s",
+        $degreesn, $minutesn, $secondsn, $degreese,
+        $minutese, $secondse, $type
+    );
+
+    my $aprsServer = "finland.aprs2.net";
+    my $port       = 14580;
+    my $callsign   = "ON3URE-1";
+    my $pass       = "23996";               # can be computed with aprspass
+    my $altInFeet = $data->{payload_fields}{altitude};
+    $comment = "received with LoRa";
+
+    my $sock = new IO::Socket::INET(
+        PeerAddr => $aprsServer,
+        PeerPort => $port,
+        Proto    => 'tcp'
+    );
+    die("Could not create socket: $!\n") unless $sock;
+
+    $sock->recv( $recv_data, 1024 );
+
+    print $sock "user $callsign pass $pass ver\n";
+
+    $sock->recv( $recv_data, 1024 );
+    if ( $recv_data !~ /^# logresp $callsign verified.*/ ) {
+        $self->log("Error: invalid response from server: $recv_data\n");
+    }
+
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
+    my $message = sprintf( "%s>APRS,TCPIP*:@%02d%02d%02dz%s/A=%06d %s\n",
+        $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
+    print $sock $message;
+    close($sock);
+
+    $self->log("beacon sent");
+
     $self->render(
         json => {
             'add' => 'ok'
