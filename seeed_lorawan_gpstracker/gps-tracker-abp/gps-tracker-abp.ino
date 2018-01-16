@@ -67,20 +67,21 @@ void setupLoRaABP() {
   SerialUSB.print(buffer);
 
   // void setId(char *DevAddr, char *DevEUI, char *AppEUI);
-  lora.setId("26011AE4", "00F33FDD11542C5B", "70B3D57ED00094C3");
+  lora.setId("26011CC6", "00050197D45823E9", "70B3D57ED0009548");
   // setKey(char *NwkSKey, char *AppSKey, char *AppKey);
-  lora.setKey("0B74363CDAF7DFE59EB49A8CBD5FE13D",
-              "1C0E3362476E45486A82DF26328DB510",
-              "3AFE4E0D4A5EE9534613B7E147C5DF20");
+  lora.setKey("22137B20EC10E8BEC32C11EBFB1681F0",
+              "7D412196E418FA04CB8B1C080DCFC5C2",
+              "NULL");
 
-  lora.setDeciveMode(LWABP);
-  lora.setDataRate(DR0, EU868);
+  lora.setDeviceMode(LWABP);
+  lora.setAdaptiveDataRate(true);
+  //lora.setDataRate(DR0, EU868);
   lora.setPower(MAX_EIRP_NDX_EU);
-  setHybridForTTN(EU_hybrid_channels);
-  lora.setReceiceWindowFirst(0, EU_hybrid_channels[0]);
-  lora.setReceiceWindowSecond(FREQ_RX_WNDW_SCND_EU, DOWNLINK_DATA_RATE_EU);
-  lora.setDutyCycle(false);
-  lora.setJoinDutyCycle(false);
+  //setHybridForTTN(EU_hybrid_channels);
+  //lora.setReceiveWindowFirst(0, EU_hybrid_channels[0]);
+  lora.setReceiveWindowSecond(FREQ_RX_WNDW_SCND_EU, DOWNLINK_DATA_RATE_EU);
+  //lora.setDutyCycle(false);
+  //lora.setJoinDutyCycle(false);
 }
 
 void setup() {
