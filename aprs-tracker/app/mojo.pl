@@ -182,7 +182,7 @@ post '/aprs-tracker/:token/feed' => sub {
         $minutese, $secondse, $type
     );
 
-    my $aprsServer = "finland.aprs2.net";
+    my $aprsServer = "belgium.aprs2.net";
     my $port       = 14580;
     my $callsign   = $config->{lora}{$data->{hardware_serial}}{callsign};
     my $pass       = $config->{lora}{$data->{hardware_serial}}{password};               # can be computed with aprspass
@@ -195,7 +195,7 @@ post '/aprs-tracker/:token/feed' => sub {
         PeerPort => $port,
         Proto    => 'tcp'
     );
-    $self->log("Could not create socket: $!\n") unless $sock;
+    $self->log("Could not create socket: $!") unless $sock;
 
     my $recv_data;
 
@@ -205,14 +205,14 @@ post '/aprs-tracker/:token/feed' => sub {
 
     $sock->recv( $recv_data, 1024 );
     if ( $recv_data !~ /^# logresp $callsign verified.*/ ) {
-        $self->log("Error: invalid response from server: $recv_data\n");
+        $self->log("Error: invalid response from server: $recv_data");
     }
 
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
-    my $message = sprintf( "%s>APRS,TCPIP*:@%02d%02d%02dz%s/A=%06d %s\n",
+    my $message = sprintf( "%s>APRS,TCPIP*:@%02d%02d%02dz%s/A=%06d %s",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
     $self->log("beacon sent:" . $message);
-    print $sock $message;
+    print $sock $message . "\n";
     close($sock);
 
     $self->render(
