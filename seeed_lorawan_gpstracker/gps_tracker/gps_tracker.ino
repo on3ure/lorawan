@@ -71,7 +71,7 @@ void setup() {
   lora.setJoinDutyCycle(false);
 
   // 0 > 10dbm // 14 RFU
-  lora.setPower(0);
+  lora.setPower(20);
 
   while (!lora.setOTAAJoin(JOIN));
 }
