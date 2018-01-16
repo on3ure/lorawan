@@ -175,8 +175,9 @@ post '/aprs-tracker/:token/feed' => sub {
     my ( $degreese, $minutese, $secondse, $signe ) =
       decimal2dms( $data->{payload_fields}{longitude} );
 
-    #k =>pickup > =>car v => van
-    my $type = "v";
+    my $type = ">"; #default car
+    $type = "v" if $config->{lora}{$data->{hardware_serial}}{type} eq "car";
+    $type = "k" if $config->{lora}{$data->{hardware_serial}}{type} eq "pickup";
 
     my $coord = sprintf(
         "%02d%02d.%02dN/%03d%02d.%02dE%1s",
@@ -184,12 +185,10 @@ post '/aprs-tracker/:token/feed' => sub {
         $minutese, $secondse, $type
     );
 
-    $self->log($coord);
-
     my $aprsServer = "finland.aprs2.net";
     my $port       = 14580;
-    my $callsign   = "ON3URE-1";
-    my $pass       = "23996";               # can be computed with aprspass
+    my $callsign   = $config->{lora}{$data->{hardware_serial}}{callsign};
+    my $pass       = $config->{lora}{$data->{hardware_serial}}{password};               # can be computed with aprspass
     my $altInFeet = $data->{payload_fields}{altitude};
     my $comment = "received with LoRa";
 
@@ -214,11 +213,9 @@ post '/aprs-tracker/:token/feed' => sub {
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
     my $message = sprintf( "%s>APRS,TCPIP*:@%02d%02d%02dz%s/A=%06d %s\n",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
-    $self->log($message);
+    $self->log("beacon sent:" . $message);
     print $sock $message;
     close($sock);
-
-    $self->log("beacon sent");
 
     $self->render(
         json => {

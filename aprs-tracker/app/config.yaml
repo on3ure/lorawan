@@ -32,3 +32,10 @@ environment: openshift
 openshift:
   namespace: wp-lorawan
 appsecret: 'alo alo this is ure calling for a very secret message to tell you ... sst'
+# type: car|van|pickup
+# pass create via https://apps.magicbug.co.uk/passcode/
+lora:
+  00050197D45823E9:
+    password: 23996
+    callsign: ON3URE-1
+    type: car
