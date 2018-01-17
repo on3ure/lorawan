@@ -139,7 +139,7 @@ void loop() {
       }
       SerialUSB.println();
       bool result =
-          lora.transferPacket(latlong.bytes, 8, DEFAULT_RESPONSE_TIMEOUT);
+          lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
       digitalWrite(BLUELED, HIGH);
     } else {
       digitalWrite(BLUELED, LOW);
