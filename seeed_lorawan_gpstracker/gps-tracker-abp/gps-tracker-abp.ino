@@ -20,6 +20,12 @@
 // Green LED
 #define GREENLED 16
 
+// last update
+unsigned long previousMillis = 0;
+
+// interval between LoRaWan updates  
+const long interval = 30000; //30 secs
+         
 char buffer[128] = {0};
 int sec = 0;
 
@@ -112,16 +118,23 @@ void loop() {
       latlong.f[0] = latitude;
       latlong.f[1] = longitude;
       latlong.f[2] = gps.altitude.meters();
+      
+      unsigned long currentMillis = millis();
 
-      SerialUSB.print("++sendPacket LatLong: ");
-      for (int i = 0; i < 8; i++) {
-        SerialUSB.print(latlong.bytes[i], HEX);
-      }
-      SerialUSB.println();
-      bool result =
-          lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+      if (currentMillis - previousMillis >= interval) {
+        // save the last time we send to the LoRaWan Network
+        previousMillis = currentMillis;
+        digitalWrite(BLUELED, HIGH);
+        SerialUSB.print("++sendPacket LatLong: ");
+        for (int i = 0; i < 8; i++) {
+          SerialUSB.print(latlong.bytes[i], HEX);
+        }
+        SerialUSB.println();
+        bool result =
+            lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+      } 
     } else {
       digitalWrite(BLUELED, LOW);
-    }
+    }  
   }
 }
