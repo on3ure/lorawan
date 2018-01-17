@@ -191,7 +191,7 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
     my $latitude = unpack "f", pack "H*", substr($hexstring, 0, 8);
     my $longitude = unpack "f", pack "H*", substr($hexstring, 8, 8);
     my $altitude = unpack "f", pack "H*", substr($hexstring, 16, 8);
-
+    $self->log("WirelessThings.be: Latitude: " . $latitude . " Longitude: " . $longitude . " Altitude:" . $altitude);
 
     my ( $degreesn, $minutesn, $secondsn, $signn ) =
       decimal2dms( $latitude );
@@ -225,7 +225,7 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
     $is->sendline($message);
 
-    $self->log( "beacon sent:" . $message );
+    $self->log( "WirelessThings.be Beacon Send:" . $message );
 
     $is->disconnect() || $self->log("Failed to disconnect: $is->{error}");
 
