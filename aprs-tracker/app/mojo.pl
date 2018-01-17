@@ -167,6 +167,8 @@ post '/aprs-tracker/:token/feed' => sub {
 
     my $data = $self->req->json;
 
+    $self->log(Dumper $data);
+
     my ( $degreesn, $minutesn, $secondsn, $signn ) =
       decimal2dms( $data->{payload_fields}{latitude} );
     my ( $degreese, $minutese, $secondse, $signe ) =
