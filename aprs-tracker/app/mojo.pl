@@ -19,6 +19,7 @@ use match::simple qw(match);
 use Data::Dumper;
 use Geo::Coordinates::DecimalDegrees;
 use Ham::APRS::IS;
+use MIME::Base64;
 
 # Environment var Mapping and fallback
 use Env qw(REDIS_PERSISTENT_SERVICE_HOST);
