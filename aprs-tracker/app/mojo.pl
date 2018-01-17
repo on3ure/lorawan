@@ -17,8 +17,8 @@ use Config::YAML;
 use boolean ':all';
 use match::simple qw(match);
 use Data::Dumper;
-use IO::Socket;
 use Geo::Coordinates::DecimalDegrees;
+use Ham::APRS::IS;
 
 # Environment var Mapping and fallback
 use Env qw(REDIS_PERSISTENT_SERVICE_HOST);
@@ -172,9 +172,10 @@ post '/aprs-tracker/:token/feed' => sub {
     my ( $degreese, $minutese, $secondse, $signe ) =
       decimal2dms( $data->{payload_fields}{longitude} );
 
-    my $type = ">"; #default car
-    $type = "v" if $config->{lora}{$data->{hardware_serial}}{type} eq "van";
-    $type = "k" if $config->{lora}{$data->{hardware_serial}}{type} eq "pickup";
+    my $type = ">";    #default car
+    $type = "v" if $config->{lora}{ $data->{hardware_serial} }{type} eq "van";
+    $type = "k"
+      if $config->{lora}{ $data->{hardware_serial} }{type} eq "pickup";
 
     my $coord = sprintf(
         "%02d%02d.%02dN/%03d%02d.%02dE%1s",
@@ -182,44 +183,25 @@ post '/aprs-tracker/:token/feed' => sub {
         $minutese, $secondse, $type
     );
 
-    my $aprsServer = "belgium.aprs2.net";
-    my $port       = 14580;
-    my $callsign   = $config->{lora}{$data->{hardware_serial}}{callsign};
-    my $pass       = $config->{lora}{$data->{hardware_serial}}{password};               # can be computed with aprspass
+    my $callsign  = $config->{lora}{ $data->{hardware_serial} }{callsign};
     my $altInFeet = $data->{payload_fields}{altitude};
-    $altInFeet = 1 if $altInFeet eq 0;
-    my $comment = "received with LoRa";
+    my $comment   = "received with LoRa";
 
-    my $sock = new IO::Socket::INET(
-        PeerAddr => $aprsServer,
-        PeerPort => $port,
-        Proto    => 'tcp'
+    my $is = new Ham::APRS::IS(
+        'belgium.aprs2.net:14580', $callsign,
+        'passcode' => Ham::APRS::IS::aprspass($callsign),
+        'appid'    => 'APLORA 1.2'
     );
-    $self->log("Could not create socket: $!") unless $sock;
+    $is->connect( 'retryuntil' => 3 ) || $self->log("Failed to connect: $is->{error}");
 
-    my $recv_data;
-
-    $sock->recv( $recv_data, 1024 );
-
-    print $sock "user $callsign pass $pass ver\n";
-
-    $sock->recv( $recv_data, 1024 );
-    if ( $recv_data !~ /^# logresp $callsign verified.*/ ) {
-        $self->log("Error: invalid response from server: $recv_data");
-    } else {
-      $self->log("RESP: " . chomp($recv_data);
-    }
-    $sock->recv( $recv_data, 1024 );
-    $self->log("RESP: " . chomp($recv_data);
-
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
-    my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dz%s/A=%06d %s",
+    my( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
+    my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dh%s/A=%06d %s",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
-    $self->log("beacon sent:" . $message);
-    print $sock $message . "\n";
-    $sock->recv( $recv_data, 1024 );
-    $self->log("RESP: " . chomp($recv_data);
-    close($sock);
+    $is->sendline($message);
+
+    $self->log( "beacon sent:" . $message );
+
+    $is->disconnect() || $self->log("Failed to disconnect: $is->{error}");
 
     $self->render(
         json => {
