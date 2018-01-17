@@ -168,7 +168,24 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
 
     my $data = $self->req->json;
 
-    $self->log(Dumper $data);
+    #$self->log(Dumper $data);
+    my $wirelessthings_be = {
+          'localTime' => '2018-01-17 11:51:09',
+          'rawData' => 'QMYcASaADwAIWAHnX4dhH/kKuytgqMWAng==',
+          'payload' => 'XTlMQiC9hkCamRlB',
+          'snr' => -18,
+          'devAddr' => '26011CC6',
+          'rssi' => -113,
+          'packetIdentifier' => 'b9f72d29ffbd706ddc7a2f4f9ba3546e',
+          'tmst' => 153373252,
+          'frequency' => '867.5',
+          'packetTime' => '2018-01-17T10:51:07.749087Z',
+          'micValid' => 'true',
+          'dataRate' => 'SF12BW125',
+          'fcnt' => '000F',
+          'packetsLeft' => 0,
+          'gatewayEui' => 'AA555A0000094223'
+        };
 
     my $hexstring = unpack('H*',decode_base64($data->{payload}));
     my $latitude = unpack "f", pack "H*", substr($hexstring, 0, 8);
@@ -194,7 +211,7 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
 
     my $callsign  = $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{callsign};
     my $altInFeet = $altitude;
-    my $comment   = "received with LoRa";
+    my $comment   = "WT LoRa snr:" . $data->{snr} . " rssi:" . $data->{rssi} . " freq:" . $data->{frequency};
 
     my $is = new Ham::APRS::IS(
         'belgium.aprs2.net:14580', $callsign,
@@ -219,7 +236,7 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
     );
 };
 
-post '/aprs-tracker/:token/feed/thethingsnetwork.org' => sub {
+post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
     my $self = shift;
 
     # reder when we are done
