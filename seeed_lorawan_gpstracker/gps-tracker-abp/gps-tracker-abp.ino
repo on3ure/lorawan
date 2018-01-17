@@ -24,10 +24,9 @@
 unsigned long previousMillis = 0;
 
 // interval between LoRaWan updates  
-const long interval = 30000; //30 secs
+const long interval = 15000; //15 secs
          
 char buffer[128] = {0};
-int sec = 0;
 
 TinyGPSPlus gps;
 typedef union {
@@ -105,36 +104,36 @@ void setup() {
 }
 
 void loop() {
-  if (sec <= 2) {
     while (Serial.available() > 0) {
       char currChar = Serial.read();
       gps.encode(currChar);
     }
     latitude = gps.location.lat();
     longitude = gps.location.lng();
-    if ((latitude && longitude) && latitude != latlong.f[0] &&
-        longitude != latlong.f[1]) {
-      digitalWrite(BLUELED, HIGH);
-      latlong.f[0] = latitude;
-      latlong.f[1] = longitude;
-      latlong.f[2] = gps.altitude.meters();
-      
-      unsigned long currentMillis = millis();
-
-      if (currentMillis - previousMillis >= interval) {
-        // save the last time we send to the LoRaWan Network
-        previousMillis = currentMillis;
+    if (gps.location.isUpdated()) {
+      if ((latitude && longitude) && latitude != latlong.f[0] &&
+          longitude != latlong.f[1]) {
         digitalWrite(BLUELED, HIGH);
-        SerialUSB.print("++sendPacket LatLong: ");
-        for (int i = 0; i < 8; i++) {
-          SerialUSB.print(latlong.bytes[i], HEX);
-        }
-        SerialUSB.println();
-        bool result =
-            lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
-      } 
-    } else {
-      digitalWrite(BLUELED, LOW);
-    }  
-  }
+        latlong.f[0] = latitude;
+        latlong.f[1] = longitude;
+        latlong.f[2] = gps.altitude.feet();
+        
+        unsigned long currentMillis = millis();
+  
+        if (currentMillis - previousMillis >= interval) {
+          // save the last time we send to the LoRaWan Network
+          previousMillis = currentMillis;
+          digitalWrite(BLUELED, HIGH);
+          SerialUSB.print("++sendPacket LatLong: ");
+          for (int i = 0; i < 8; i++) {
+            SerialUSB.print(latlong.bytes[i], HEX);
+          }
+          SerialUSB.println();
+          bool result =
+              lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+        } 
+      } else {
+        digitalWrite(BLUELED, LOW);
+      }  
+    }
 }

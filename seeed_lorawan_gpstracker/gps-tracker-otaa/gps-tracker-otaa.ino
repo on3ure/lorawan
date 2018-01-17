@@ -21,7 +21,6 @@
 #define GREENLED 16
 
 char buffer[128] = {0};
-int sec = 0;
 
 // The TinyGPS++ object
 TinyGPSPlus gps;
@@ -120,29 +119,29 @@ void setup() {
 }
 
 void loop() {
-  if (sec <= 2) {
     while (Serial.available() > 0) {
       char currChar = Serial.read();
       gps.encode(currChar);
     }
-    latitude = gps.location.lat();
-    longitude = gps.location.lng();
-    if ((latitude && longitude) && latitude != latlong.f[0] &&
-        longitude != latlong.f[1]) {
-      latlong.f[0] = latitude;
-      latlong.f[1] = longitude;
-      latlong.f[2] = gps.altitude.meters();
-
-      SerialUSB.print("++sendPacket LatLong: ");
-      for (int i = 0; i < 8; i++) {
-        SerialUSB.print(latlong.bytes[i], HEX);
+    if (gps.location.isUpdated()) {
+      latitude = gps.location.lat();
+      longitude = gps.location.lng();
+      if ((latitude && longitude) && latitude != latlong.f[0] &&
+          longitude != latlong.f[1]) {
+        latlong.f[0] = gps.location.lat();
+        latlong.f[1] = gps.location.lng();
+        latlong.f[2] = gps.altitude.feet();
+  
+        SerialUSB.print("++sendPacket LatLong: ");
+        for (int i = 0; i < 8; i++) {
+          SerialUSB.print(latlong.bytes[i], HEX);
+        }
+        SerialUSB.println();
+        bool result =
+            lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+        digitalWrite(BLUELED, HIGH);
+      } else {
+        digitalWrite(BLUELED, LOW);
       }
-      SerialUSB.println();
-      bool result =
-          lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
-      digitalWrite(BLUELED, HIGH);
-    } else {
-      digitalWrite(BLUELED, LOW);
     }
-  }
 }
