@@ -1,5 +1,4 @@
 #include <LoRaWanURE.h>
-#include <TimerTCC0.h>
 #include <TinyGPS++.h>
 
 // 2nd receive freq
@@ -28,6 +27,17 @@ const long interval = 15000; //15 secs
          
 char buffer[128] = {0};
 
+// minimum speed to send updates
+const double minSpeed = 10; // 10 kmh at least to push an update
+
+// check speed and course
+double currentSpeed = 0;
+char* currentDirection = {0};
+
+// booleans
+boolean trigger = 0;
+boolean firstUpdate = 0;
+
 TinyGPSPlus gps;
 typedef union {
   float f[3]; 
@@ -39,21 +49,6 @@ floatArr2Val latlong;
 
 float latitude;
 float longitude;
-
-void displayInfo() {
-  SerialUSB.print("++Location: ");
-  SerialUSB.print(latlong.f[0], 6);
-  SerialUSB.print(",");
-  SerialUSB.print(latlong.f[1], 6);
-  SerialUSB.print(" Latitude: ");
-  SerialUSB.print(latlong.f[2], 6);
-  SerialUSB.println();
-}
-
-void timerIsr(void) // interrupt routine
-{
-  displayInfo();
-}
 
 void setupLoRaABP() {
   lora.init();
@@ -99,31 +94,59 @@ void setup() {
 
   // we are ready turn on the light
   digitalWrite(GREENLED, HIGH);
-  TimerTcc0.initialize(15000000);
-  TimerTcc0.attachInterrupt(timerIsr);
 }
 
 void loop() {
     while (Serial.available() > 0) {
-      char currChar = Serial.read();
-      gps.encode(currChar);
-    }
-    latitude = gps.location.lat();
-    longitude = gps.location.lng();
-    if (gps.location.isUpdated()) {
-      if ((latitude && longitude) && latitude != latlong.f[0] &&
-          longitude != latlong.f[1]) {
+        char currChar = Serial.read();
+        gps.encode(currChar);
+
+      if (gps.location.isUpdated()) {
+        //SerialUSB.println("++Got location update from GPS");
+        latitude = gps.location.lat();
+        longitude = gps.location.lng();
+
+        // stuff to add to display
+        //SerialUSB.println(gps.date.value()); // Raw date in DDMMYY format (u32)
+        //SerialUSB.println(gps.time.value()); // Raw time in HHMMSSCC format (u32)
+        //SerialUSB.println(gps.speed.kmph()); // Speed in kilometers per hour (double)
+        //SerialUSB.println(gps.course.deg()); // Course in degrees (double) 0-360
+        //SerialUSB.println(gps.satellites.value()); // Number of satellites in use (u32)
+
+        if ( strdup(gps.cardinal(gps.course.deg())) != currentDirection && gps.speed.kmph() >= minSpeed ){
+           currentDirection = strdup(gps.cardinal(gps.course.deg()));
+           SerialUSB.print("++Course Changed to: ");
+           SerialUSB.println(currentDirection);
+           trigger = 1;
+        }
+          
+      if (firstUpdate != 1 || trigger != 0) {
+        if (firstUpdate != 1) 
+          SerialUSB.println("++Send First Lock Location");
+      
+        trigger = 0;
+        firstUpdate = 1;
+        
         digitalWrite(BLUELED, HIGH);
         latlong.f[0] = latitude;
         latlong.f[1] = longitude;
         latlong.f[2] = gps.altitude.feet();
+
         
-        unsigned long currentMillis = millis();
-  
+        unsigned long currentMillis = millis();  
         if (currentMillis - previousMillis >= interval) {
           // save the last time we send to the LoRaWan Network
           previousMillis = currentMillis;
           digitalWrite(BLUELED, HIGH);
+        
+          SerialUSB.print("++Location: ");
+          SerialUSB.print(latlong.f[0], 6);
+          SerialUSB.print(",");
+          SerialUSB.print(latlong.f[1], 6);
+          SerialUSB.print(" Altitude (in feet): ");
+          SerialUSB.print(latlong.f[2], 6);
+          SerialUSB.println();
+          
           SerialUSB.print("++sendPacket LatLong: ");
           for (int i = 0; i < 8; i++) {
             SerialUSB.print(latlong.bytes[i], HEX);
@@ -131,9 +154,9 @@ void loop() {
           SerialUSB.println();
           bool result =
               lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+          digitalWrite(BLUELED, LOW);
         } 
-      } else {
-        digitalWrite(BLUELED, LOW);
-      }  
+          }
+    } 
     }
-}
+    }

@@ -1,5 +1,4 @@
 #include <LoRaWanURE.h>
-#include <TimerTCC0.h>
 #include <TinyGPS++.h>
 
 // 2nd receive freq
@@ -35,31 +34,6 @@ floatArr2Val latlong;
 float latitude;
 float longitude;
 
-void setHybridForTTN(const float *channels) {
-  for (int i = 0; i < 8; i++) {
-    if (channels[i] != 0) {
-      lora.setChannel(i, channels[i], UPLINK_DATA_RATE_MIN,
-                      UPLINK_DATA_RATE_MAX_EU);
-    }
-  }
-}
-
-void displayInfo() {
-  SerialUSB.print("++Location: ");
-  SerialUSB.print(latlong.f[0], 6);
-  SerialUSB.print(",");
-  SerialUSB.print(latlong.f[1], 6);
-  SerialUSB.print(" Latitude: ");
-  SerialUSB.print(latlong.f[2], 6);
-  SerialUSB.println();
-}
-
-void timerIsr(void) // interrupt routine
-{
-  displayInfo();
-}
-
-
 void setupLoRaOTAA() {
   lora.init();
   lora.setDeviceReset();
@@ -74,22 +48,19 @@ void setupLoRaOTAA() {
   SerialUSB.print(buffer);
 
   // void setId(char *DevAddr, char *DevEUI, char *AppEUI);
-  lora.setId(NULL, "00C14D75CFD10491", "70B3D57ED0009548");
-  //lora.setId(NULL, NULL, "70B3D57ED00094C3");
+  lora.setId(NULL, "006C25E52699D74C", "70B3D57ED0009548");
   // setKey(char *NwkSKey, char *AppSKey, char *AppKey);
-  lora.setKey("89BFC68717D6CEB03F80FC54CEB43A26", "89BFC68717D6CEB03F80FC54CEB43A26", "89BFC68717D6CEB03F80FC54CEB43A26");
-
-
-  if (lora.setDeviceMode(LWOTAA) == false)               // Over The Air Activation
-      SerialUSB.print("++Set Mode to OTAA failed.\n");
-  else
-      SerialUSB.print("++OTAA mode set.\n");
+  lora.setKey(NULL, NULL, "260A16EACA3D43353BA050FBA8C9C582");
 
   lora.setAdaptiveDataRate(true);
   lora.setPower(MAX_EIRP_NDX_EU);
   lora.setReceiveWindowSecond(FREQ_RX_WNDW_SCND_EU, DOWNLINK_DATA_RATE_EU);
  
-  
+   if (lora.setDeviceMode(LWOTAA) == false)               // Over The Air Activation
+      SerialUSB.print("++Set Mode to OTAA failed.\n");
+  else
+      SerialUSB.print("++OTAA mode set.\n");
+ 
   while(true) {
       if (lora.setOTAAJoin(JOIN))
         break;
@@ -114,8 +85,6 @@ void setup() {
 
   // we are ready turn on the light
   digitalWrite(GREENLED, HIGH);
-  TimerTcc0.initialize(15000000);
-  TimerTcc0.attachInterrupt(timerIsr);
 }
 
 void loop() {
@@ -124,6 +93,13 @@ void loop() {
       gps.encode(currChar);
     }
     if (gps.location.isUpdated()) {
+      SerialUSB.println(gps.date.value()); // Raw date in DDMMYY format (u32)
+      SerialUSB.println(gps.time.value()); // Raw time in HHMMSSCC format (u32)
+      SerialUSB.println(gps.speed.kmph()); // Speed in kilometers per hour (double)
+      SerialUSB.println(gps.course.value()); // Raw course in 100ths of a degree (i32)
+      SerialUSB.println(gps.course.deg()); // Course in degrees (double)
+      SerialUSB.println(gps.satellites.value()); // Number of satellites in use (u32)
+
       latitude = gps.location.lat();
       longitude = gps.location.lng();
       if ((latitude && longitude) && latitude != latlong.f[0] &&
@@ -137,6 +113,15 @@ void loop() {
           SerialUSB.print(latlong.bytes[i], HEX);
         }
         SerialUSB.println();
+        
+        SerialUSB.print("++Location: ");
+        SerialUSB.print(latlong.f[0], 6);
+        SerialUSB.print(",");
+        SerialUSB.print(latlong.f[1], 6);
+        SerialUSB.print(" Latitude: ");
+        SerialUSB.print(latlong.f[2], 6);
+        SerialUSB.println();
+
         bool result =
             lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
         digitalWrite(BLUELED, HIGH);
