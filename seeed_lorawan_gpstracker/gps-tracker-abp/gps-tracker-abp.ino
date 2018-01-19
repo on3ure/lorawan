@@ -169,7 +169,7 @@ void loop() {
         standStill = 0;
       }
 
-      if (gps.speed.kmph() <= standstillSpeed) {
+      if (gps.speed.kmph() <= standstillSpeed && standStill == 0) {
         trigger = 1;
         standStill = 1;
       }
