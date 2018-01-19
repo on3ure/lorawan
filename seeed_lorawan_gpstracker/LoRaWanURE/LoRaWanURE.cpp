@@ -66,6 +66,16 @@ void LoRaWanUREClass::getId(char *buffer, short length, unsigned char timeout)
     }
 }
 
+void LoRaWanUREClass::getCounters(char *buffer, short length, unsigned char timeout)
+{
+    if(buffer)
+    {
+        while(SerialLoRa.available())SerialLoRa.read();
+        sendCommand("AT+LW=ULDL\r\n");
+        readBuffer(buffer, length, timeout);    
+    }
+}
+
 void LoRaWanUREClass::setId(char *DevAddr, char *DevEUI, char *AppEUI)
 {
     char cmd[64];
