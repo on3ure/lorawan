@@ -29,8 +29,6 @@
 // Green LED
 #define GREENLED 16
 
-
-
 const int pin_battery_voltage = A4;
 
 // last update
@@ -54,7 +52,10 @@ boolean firstUpdate = 0;
 boolean standStill = 0;
 
 // options
-const boolean hasBattery = 0;
+const boolean hasBattery = 1;
+
+float bat_low = 0;
+float bat_high = 0;
 
 TinyGPSPlus gps;
 typedef union {
@@ -122,12 +123,24 @@ void loop() {
 
     if (hasBattery) {
       int a = analogRead(pin_battery_voltage);
-      float v = a/1023.0*3.3*2.0;        // there's an 10M and 10M resistor divider
+      //float v = a/1023.0*3.3*2.0;        // there's an 10M and 10M resistor divider
+      float v = a/28.7;        // there's an 10M and 10M resistor divider
       SerialUSB.print("The voltage of battery is ");
       SerialUSB.print(v, 2);
+      SerialUSB.print("V low ");
+      SerialUSB.print(bat_low, 2);
+      SerialUSB.print("V high ");
+      SerialUSB.print(bat_high, 2);
       SerialUSB.println(" V");
       // check batery level when low ... go to deep sleep forever
-      if (1) {
+      if (v > bat_low) {
+        bat_low = v;
+      }
+      if (v > bat_high) {
+        bat_high = v;
+      }
+      //if (v <= 3.3) {
+            if (0 > v) {
         nrgSave.begin(WAKE_EXT_INTERRUPT, 3, dummy);  // write LoRaFrame before shutdown
         SerialUSB.println("MCU Stanby... Sleepy sleep in 30s from now ...");
         delay(30000); // Wait for LoRaFrame to be written to EEPROM
