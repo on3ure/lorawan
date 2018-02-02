@@ -28,10 +28,10 @@ FlashStorage(my_flash_store, int);
 #define DEFAULT_RESPONSE_TIMEOUT 5
 
 // Blue LED
-#define BLUELED A0
+#define BLUELED A1
 
 // Green LED
-#define GREENLED A1
+#define GREENLED A0
 
 // last update
 unsigned long previousMillis = 0;
@@ -142,7 +142,8 @@ void setup() {
 }
 
 void loop() {
-  while (Serial.available() > 0) {
+  while (Serial.available() > 0)
+    gps.encode(Serial.read());
 
     if (hasBattery) {
       int a = analogRead(pin_battery_voltage);
@@ -199,10 +200,6 @@ void loop() {
       }
     }
     
-    char currChar = Serial.read();
-    //SerialUSB.println(currChar);
-    gps.encode(currChar);
-
     if (gps.location.isUpdated()) {
       digitalWrite(GREENLED, HIGH);
       digitalWrite(BLUELED, HIGH);
@@ -279,12 +276,12 @@ void loop() {
         }
       }
     } else {
-      digitalWrite(GREENLED, HIGH);
-      SerialUSB.println("++Waiting for GPS");       
-      delay(1500);                
       digitalWrite(GREENLED, LOW);
+      SerialUSB.println("++Waiting for GPS");       
+      delay(5000);                
+      digitalWrite(GREENLED, HIGH);
+      delay(5000);                
     }
-  }
 }
 
 void dummy(void)  //interrupt routine (isn't necessary to execute any tasks in this routine
