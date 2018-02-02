@@ -5,10 +5,10 @@
 // TODO: Add LED Solution (2 or 3 leds)
 
 #include <LoRaWanURE.h>
-#include <EnergySaving.h>
-#include "MC20_Common.h"
-#include "MC20_Arduino_Interface.h"
-#include "MC20_GNSS.h"
+//#include <EnergySaving.h>
+//#include "MC20_Common.h"
+//#include "MC20_Arduino_Interface.h"
+//#include "MC20_GNSS.h"
 #include <TinyGPS++.h>
 
 // 2nd receive freq
@@ -24,12 +24,10 @@
 #define DEFAULT_RESPONSE_TIMEOUT 5
 
 // Blue LED
-#define BLUELED 14
+#define BLUELED A0
 
 // Green LED
-#define GREENLED 16
-
-const int pin_battery_voltage = A4;
+#define GREENLED A1
 
 // last update
 unsigned long previousMillis = 0;
@@ -54,6 +52,10 @@ boolean standStill = 0;
 // options
 const boolean hasBattery = 1;
 
+// batery stuff
+const int pin_battery_status  = A5;
+const int pin_battery_voltage = A4;
+
 float bat_low = 0;
 float bat_high = 0;
 
@@ -68,7 +70,7 @@ floatArr2Val latlong;
 float latitude;
 float longitude;
 
-EnergySaving nrgSave;
+//EnergySaving nrgSave;
 
 void setupLoRaABP() {
   lora.init();
@@ -81,6 +83,10 @@ void setupLoRaABP() {
 
   memset(buffer, 0, 256);
   lora.getId(buffer, 256, 1);
+  SerialUSB.print(buffer);
+
+  memset(buffer, 0, 256);
+  lora.setCounters(buffer, 256, 1, 5000, 0);
   SerialUSB.print(buffer);
 
   memset(buffer, 0, 256);
@@ -103,19 +109,23 @@ void setup() {
   Serial.begin(9600);
   SerialUSB.begin(115200);
 
-  memset(buffer, 0, 256);
+  // setup LoRa
+  setupLoRaABP();
 
-  // enable power to grove components
-  digitalWrite(38, HIGH);
+  pinMode(pin_battery_status, INPUT);
+
+  // disable power to grove components
+  digitalWrite(38, LOW);
 
   // set pin`s to output modules
   pinMode(GREENLED, OUTPUT);
   pinMode(BLUELED, OUTPUT);
 
-  // setup LoRa
-  setupLoRaABP();
+  digitalWrite(GREENLED, LOW);
+  digitalWrite(BLUELED, LOW);
 
-  
+  delay(5000);
+
 }
 
 void loop() {
@@ -123,8 +133,7 @@ void loop() {
 
     if (hasBattery) {
       int a = analogRead(pin_battery_voltage);
-      //float v = a/1023.0*3.3*2.0;        // there's an 10M and 10M resistor divider
-      float v = a/28.7;        // there's an 10M and 10M resistor divider
+    float v = a/1023.0*3.3*11.0;        // there's an 1M and 100k resistor divider
       SerialUSB.print("The voltage of battery is ");
       SerialUSB.print(v, 2);
       SerialUSB.print("V low ");
@@ -132,6 +141,8 @@ void loop() {
       SerialUSB.print("V high ");
       SerialUSB.print(bat_high, 2);
       SerialUSB.println(" V");
+      SerialUSB.println(digitalRead(pin_battery_status));
+
       // check batery level when low ... go to deep sleep forever
       if (v > bat_low) {
         bat_low = v;
@@ -140,26 +151,28 @@ void loop() {
         bat_high = v;
       }
       //if (v <= 3.3) {
-            if (0 > v) {
-        nrgSave.begin(WAKE_EXT_INTERRUPT, 3, dummy);  // write LoRaFrame before shutdown
-        SerialUSB.println("MCU Stanby... Sleepy sleep in 30s from now ...");
-        delay(30000); // Wait for LoRaFrame to be written to EEPROM
-        Serial1.end(); // Disable Uart
-        pinMode(0, OUTPUT);
-        pinMode(1, OUTPUT);
-        digitalWrite(0, LOW); // Rx
-        digitalWrite(1, LOW); // Tx
-        digitalWrite(9, LOW); // DTR  90uA
+            if (0 > 1000) {
+//        nrgSave.begin(WAKE_EXT_INTERRUPT, 3, dummy);  // write LoRaFrame before shutdown
+//        SerialUSB.println("MCU Stanby... Sleepy sleep in 30s from now ...");
+//       delay(30000); // Wait for LoRaFrame to be written to EEPROM
+//        Serial1.end(); // Disable Uart
+//        pinMode(0, OUTPUT);
+//        pinMode(1, OUTPUT);
+//       digitalWrite(0, LOW); // Rx
+//        digitalWrite(1, LOW); // Tx
+//        digitalWrite(9, LOW); // DTR  90uA
         /*******************************************/
-        nrgSave.standby();  //now mcu goes in standby mode
+//        nrgSave.standby();  //now mcu goes in standby mode
       }
     }
     
     char currChar = Serial.read();
+    //SerialUSB.println(currChar);
     gps.encode(currChar);
 
     if (gps.location.isUpdated()) {
-      digitalWrite(GREENLED, HIGH);
+      digitalWrite(GREENLED, LOW);
+      digitalWrite(BLUELED, LOW);
       
       // SerialUSB.println("++Got location update from GPS");
       latitude = gps.location.lat();
@@ -224,18 +237,13 @@ void loop() {
           SerialUSB.println();
           bool result =
               lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+          delay(500);
           digitalWrite(BLUELED, LOW);
         }
       }
     } else {
-      SerialUSB.println("++Waiting for GPS");
+      //SerialUSB.println("++Waiting for GPS");
       digitalWrite(GREENLED, HIGH);
-      delay(500);
-      digitalWrite(GREENLED, LOW);
-      delay(500);
-      digitalWrite(BLUELED, HIGH);
-      delay(500);
-      digitalWrite(BLUELED, LOW);
       delay(500);
     }
   }

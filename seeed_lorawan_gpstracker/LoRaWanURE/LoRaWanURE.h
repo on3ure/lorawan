@@ -155,7 +155,10 @@ class LoRaWanUREClass
          *  
          *  \return Return null.
          */
-        void getCounters(char *buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT);
+    void getCounters(char *buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT);
+    
+    // added by ure
+    void setCounters(char *buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT, int upload = 0, int download = 0);
 
         /**
          *  \brief Set the ID
