@@ -1,6 +1,19 @@
+// TODO: put LORA and GPS to sleep mode ... out of sleep mode when movement
+// TODO: Safe frame number when lipo batery is low and shutdown ... read frame number from epron
+// TODO: Battery management
+// TODO: Add OLED Display option (date time / lat long alt / speed + direction)
+// TODO: Add LED Solution (2 or 3 leds)
+// https://github.com/cmaglie/FlashStorage
+
 #include <LoRaWanURE.h>
-#include <TimerTCC0.h>
+#include <EnergySaving.h>
+//#include "MC20_Common.h"
+//#include "MC20_Arduino_Interface.h"
+//#include "MC20_GNSS.h"
 #include <TinyGPS++.h>
+#include <FlashStorage.h>
+
+FlashStorage(my_flash_store, int);
 
 // 2nd receive freq
 #define FREQ_RX_WNDW_SCND_EU 869.525
@@ -15,19 +28,45 @@
 #define DEFAULT_RESPONSE_TIMEOUT 5
 
 // Blue LED
-#define BLUELED 14
+#define BLUELED A1
 
 // Green LED
-#define GREENLED 16
+#define GREENLED A0
+
+// last update
+unsigned long previousMillis = 0;
+
+// interval between LoRaWan updates
+const long interval = 40000; // 40 secs
 
 char buffer[128] = {0};
-int sec = 0;
+
+const double drivingSpeed = 10; 
+const double standstillSpeed = 1; 
+
+// check speed and course
+double currentSpeed = 0;
+char *currentDirection = {0};
+
+// booleans
+boolean trigger = 0;
+boolean firstUpdate = 0;
+boolean standStill = 0;
+
+// options
+const boolean hasBattery = 1;
+
+// batery stuff
+const int pin_battery_status  = A5;
+const int pin_battery_voltage = A4;
+
+float bat_low = 0;
+float bat_high = 0;
 
 TinyGPSPlus gps;
 typedef union {
-  float f[3]; 
-  unsigned char
-      bytes[12]; 
+  float f[3];
+  unsigned char bytes[12];
 } floatArr2Val;
 
 floatArr2Val latlong;
@@ -35,20 +74,12 @@ floatArr2Val latlong;
 float latitude;
 float longitude;
 
-void displayInfo() {
-  SerialUSB.print("++Location: ");
-  SerialUSB.print(latlong.f[0], 6);
-  SerialUSB.print(",");
-  SerialUSB.print(latlong.f[1], 6);
-  SerialUSB.print(" Latitude: ");
-  SerialUSB.print(latlong.f[2], 6);
-  SerialUSB.println();
-}
+int initialFramecounter = 15002;
+int framecounter;
 
-void timerIsr(void) // interrupt routine
-{
-  displayInfo();
-}
+int battery_status;
+
+EnergySaving nrgSave;
 
 void setupLoRaABP() {
   lora.init();
@@ -67,61 +98,193 @@ void setupLoRaABP() {
   lora.setId("26011CC6", "00050197D45823E9", "70B3D57ED0009548");
   // setKey(char *NwkSKey, char *AppSKey, char *AppKey);
   lora.setKey("22137B20EC10E8BEC32C11EBFB1681F0",
-              "7D412196E418FA04CB8B1C080DCFC5C2",
-              "NULL");
+              "7D412196E418FA04CB8B1C080DCFC5C2", "NULL");
 
   lora.setDeviceMode(LWABP);
   lora.setAdaptiveDataRate(true);
   lora.setPower(MAX_EIRP_NDX_EU);
   lora.setReceiveWindowSecond(FREQ_RX_WNDW_SCND_EU, DOWNLINK_DATA_RATE_EU);
+
+  // read frame counter from flash drive on boot
+  framecounter = my_flash_store.read();
+  if (initialFramecounter > framecounter) {
+    my_flash_store.write(initialFramecounter);
+    framecounter = initialFramecounter;
+  }
+
+  memset(buffer, 0, 256);
+  lora.setCounters(buffer, 256, 1, framecounter, 0);
+  SerialUSB.print(buffer);
 }
 
 void setup() {
   Serial.begin(9600);
   SerialUSB.begin(115200);
 
-  memset(buffer, 0, 256);
+  
+  // setup LoRa
+  setupLoRaABP();
 
-  // enable power to grove components
-  digitalWrite(38, HIGH);
+  pinMode(pin_battery_status, INPUT);
+
+  // disable power to grove components
+  digitalWrite(38, LOW);
 
   // set pin`s to output modules
   pinMode(GREENLED, OUTPUT);
   pinMode(BLUELED, OUTPUT);
 
-  // setup LoRa
-  setupLoRaABP();
+  digitalWrite(GREENLED, LOW);
+  digitalWrite(BLUELED, LOW);
 
-  // we are ready turn on the light
-  digitalWrite(GREENLED, HIGH);
-  TimerTcc0.initialize(15000000);
-  TimerTcc0.attachInterrupt(timerIsr);
+  delay(5000);
+
 }
 
 void loop() {
-  if (sec <= 2) {
-    while (Serial.available() > 0) {
-      char currChar = Serial.read();
-      gps.encode(currChar);
-    }
-    latitude = gps.location.lat();
-    longitude = gps.location.lng();
-    if ((latitude && longitude) && latitude != latlong.f[0] &&
-        longitude != latlong.f[1]) {
-      digitalWrite(BLUELED, HIGH);
-      latlong.f[0] = latitude;
-      latlong.f[1] = longitude;
-      latlong.f[2] = gps.altitude.meters();
+  while (Serial.available() > 0)
+    gps.encode(Serial.read());
 
-      SerialUSB.print("++sendPacket LatLong: ");
-      for (int i = 0; i < 8; i++) {
-        SerialUSB.print(latlong.bytes[i], HEX);
+    if (hasBattery) {
+      int a = analogRead(pin_battery_voltage);
+      float v = a/1023.0*3.3*11.0;        // there's an 1M and 100k resistor divider
+      SerialUSB.print("++BATTERY ");
+      SerialUSB.print(v, 2);
+      SerialUSB.print("V low ");
+      SerialUSB.print(bat_low, 2);
+      SerialUSB.print("V high ");
+      SerialUSB.print(bat_high, 2);
+      SerialUSB.println(" V");
+      battery_status = digitalRead(pin_battery_status);
+
+      if (battery_status == 0) {
+        SerialUSB.println("++BATTERY_STATUS Sleeping");
       }
-      SerialUSB.println();
-      bool result =
-          lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
-    } else {
-      digitalWrite(BLUELED, LOW);
+
+      if (battery_status == 1) {
+        SerialUSB.println("++BATTERY_STATUS Charging");
+      }
+
+      if (battery_status == 2) {
+        SerialUSB.println("++BATTERY_STATUS Charging done");
+      }
+
+      if (battery_status == 3) {
+        SerialUSB.println("++BATTERY_STATUS Error");
+      }
+
+      // check batery level when low ... go to deep sleep forever
+      if (v > bat_low) {
+        bat_low = v;
+      }
+      if (v > bat_high) {
+        bat_high = v;
+      }
+
+      // Safe LiPo battery
+      if (v <= 3.3 && battery_status == 0 && hasBattery) {
+        nrgSave.begin(WAKE_EXT_INTERRUPT, 3, dummy);  // write LoRaFrame before shutdown
+        my_flash_store.write(framecounter);
+        SerialUSB.println("MCU Stanby... Sleepy sleep in 30s from now ...");
+        delay(30000); // write framecounter to SD
+        digitalWrite(GREENLED, HIGH);
+        digitalWrite(BLUELED, HIGH);
+        digitalWrite(0, LOW); // Rx
+        digitalWrite(1, LOW); // Tx
+        digitalWrite(9, LOW); // DTR  90uA        
+        pinMode(0, OUTPUT);
+        pinMode(1, OUTPUT);
+        Serial1.end(); // Disable Uart
+        /*******************************************/
+        nrgSave.standby();  //now mcu goes in standby mode
+      }
     }
-  }
+    
+    if (gps.location.isUpdated()) {
+      digitalWrite(GREENLED, HIGH);
+      digitalWrite(BLUELED, HIGH);
+      
+      // SerialUSB.println("++Got location update from GPS");
+      latitude = gps.location.lat();
+      longitude = gps.location.lng();
+
+      // stuff to add to display
+      // SerialUSB.println(gps.date.value()); // Raw date in DDMMYY format (u32)
+      // SerialUSB.println(gps.time.value()); // Raw time in HHMMSSCC format
+      // (u32)  SerialUSB.println(gps.speed.kmph()); // Speed in kilometers per
+      // hour (double)  SerialUSB.println(gps.course.deg()); // Course in degrees
+      // (double) 0-360  SerialUSB.println(gps.satellites.value()); // Number of
+      // satellites in use (u32)
+
+      if (strdup(gps.cardinal(gps.course.deg())) != currentDirection &&
+          gps.speed.kmph() >= drivingSpeed) {
+        currentDirection = strdup(gps.cardinal(gps.course.deg()));
+        SerialUSB.print("++Course Changed to: ");
+        SerialUSB.println(currentDirection);
+        trigger = 1;
+        standStill = 0;
+      }
+
+      if (gps.speed.kmph() <= standstillSpeed && standStill == 0) {
+        trigger = 1;
+        standStill = 1;
+      }
+
+      if (firstUpdate != 1 || trigger != 0) {
+        if (firstUpdate != 1)
+          SerialUSB.println("++Send First Lock Location");
+        
+        if (standStill == 1) {
+          SerialUSB.println("++We are not driving");
+        }
+
+        trigger = 0;
+        firstUpdate = 1;
+        
+
+        latlong.f[0] = latitude;
+        latlong.f[1] = longitude;
+        latlong.f[2] = gps.altitude.feet();
+
+        unsigned long currentMillis = millis();
+        if (currentMillis - previousMillis >= interval) {
+          // save the last time we send to the LoRaWan Network
+          previousMillis = currentMillis;
+          digitalWrite(BLUELED, LOW);
+
+          SerialUSB.print("++Location: ");
+          SerialUSB.print(latlong.f[0], 6);
+          SerialUSB.print(",");
+          SerialUSB.print(latlong.f[1], 6);
+          SerialUSB.print(" Altitude (in feet): ");
+          SerialUSB.print(latlong.f[2], 6);
+          SerialUSB.println();
+
+          SerialUSB.print("++sendPacket LatLong: ");
+          for (int i = 0; i < 8; i++) {
+            SerialUSB.print(latlong.bytes[i], HEX);
+          }
+          SerialUSB.println();
+          bool result =
+              lora.transferPacket(latlong.bytes, 12, DEFAULT_RESPONSE_TIMEOUT);
+          framecounter++;
+          delay(1500);
+          memset(buffer, 0, 256);
+          lora.getCounters(buffer, 256, 1);
+          SerialUSB.print(buffer);
+          digitalWrite(BLUELED, HIGH);
+        }
+      }
+    } else {
+      digitalWrite(GREENLED, LOW);
+      SerialUSB.println("++Waiting for GPS");       
+      delay(5000);                
+      digitalWrite(GREENLED, HIGH);
+      delay(5000);                
+    }
+}
+
+void dummy(void)  //interrupt routine (isn't necessary to execute any tasks in this routine
+{
+ 
 }

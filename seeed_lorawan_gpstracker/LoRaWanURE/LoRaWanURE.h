@@ -145,6 +145,20 @@ class LoRaWanUREClass
          *  \return Return null.
          */
         void getId(char *buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT);
+        
+        /**
+         *  \brief Read the ULDL Counters from device
+         *  
+         *  \param [in] *buffer The output data cache
+         *  \param [in] length The length of data cache
+         *  \param [in] timeout The over time of read
+         *  
+         *  \return Return null.
+         */
+    void getCounters(char *buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT);
+    
+    // added by ure
+    void setCounters(char *buffer, short length, unsigned char timeout = DEFAULT_TIMEOUT, int upload = 0, int download = 0);
 
         /**
          *  \brief Set the ID
