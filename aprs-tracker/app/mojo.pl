@@ -259,7 +259,7 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
       decimal2dms( $data->{payload_fields}{longitude} );
 
     my $type = ">";    #default car
-    $type = "v" if $config->{lora}{ $data->{hardware_serial} }{type} eq "van";
+    $type = "v" if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type} eq "van";
     $type = "k"
       if $config->{lora}{ $data->{hardware_serial} }{type} eq "pickup";
 
@@ -269,7 +269,7 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
         $minutese, $secondse, $type
     );
 
-    my $callsign  = $config->{lora}{ $data->{hardware_serial} }{callsign};
+    my $callsign  = $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{callsign};
     my $altInFeet = $data->{payload_fields}{altitude};
     my $comment   = "received with LoRa";
 
