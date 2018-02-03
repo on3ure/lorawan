@@ -261,7 +261,7 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
     my $type = ">";    #default car
     $type = "v" if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type} eq "van";
     $type = "k"
-      if $config->{lora}{ $data->{hardware_serial} }{type} eq "pickup";
+      if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type} eq "pickup";
 
     my $coord = sprintf(
         "%02d%02d.%02dN/%03d%02d.%02dE%1s",
