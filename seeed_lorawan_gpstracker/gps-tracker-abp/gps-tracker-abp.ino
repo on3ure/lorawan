@@ -79,7 +79,7 @@ floatArr2Val latlong;
 float latitude;
 float longitude;
 
-int initialFramecounter = 266;
+int initialFramecounter = 271;
 int framecounter;
 
 int battery_status;
