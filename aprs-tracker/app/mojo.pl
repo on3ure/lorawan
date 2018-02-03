@@ -271,7 +271,7 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
 
     my $callsign  = $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{callsign};
     my $altInFeet = $data->{payload_fields}{altitude};
-    my $comment   = "received with LoRa";
+    my $comment   = "TTN LoRa snr:" . $data->{metadata}{gateways}[0]{snr} . " rssi:" . $data->{metadata}{gateways}[0]{rssi} . " freq:" . $data->{metadata}{frequency};
 
     my $is = new Ham::APRS::IS(
         'belgium.aprs2.net:14580', $callsign,
