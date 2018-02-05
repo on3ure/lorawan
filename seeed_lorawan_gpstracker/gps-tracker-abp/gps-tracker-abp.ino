@@ -41,22 +41,16 @@ unsigned long updateTimeGPSlock = 0;
 unsigned long updateTimeBATTERYlock = 0;
 
 // interval between LoRaWan updates
-const long LORAinterval = 60000;  // each minute
+const long LORAinterval = 15000;  // each 15 seconds
 const long LORAintervalStandingStill = 600000;  // each 10 minutes
 
 char buffer[128] = {0};
 
 const double drivingSpeed = 10;
-const double standstillSpeed = 1;
 
 // check speed and course
 double currentSpeed = 0;
 char *currentDirection = {0};
-
-// booleans
-boolean trigger = 0;
-boolean firstUpdate = 0;
-boolean standStill = 0;
 
 // options
 const boolean hasBattery = 1;
@@ -79,7 +73,7 @@ floatArr2Val latlong;
 float latitude;
 float longitude;
 
-int initialFramecounter = 271;
+int initialFramecounter = 789;
 int framecounter;
 
 int battery_status;
@@ -144,7 +138,7 @@ void setup() {
 
 void loop() {
   while (Serial.available() > 0) gps.encode(Serial.read());
-
+  
   if (gps.location.isUpdated()) {
     //SerialUSB.println("++Got location update from GPS");
     latitude = gps.location.lat();
@@ -159,32 +153,16 @@ void loop() {
     // satellites in use (u32)
 
     if (strdup(gps.cardinal(gps.course.deg())) != currentDirection &&
-        gps.speed.kmph() >= drivingSpeed) {
+      gps.speed.kmph() >= drivingSpeed) {
+      SerialUSB.print("++Course Changed from: ");
+      SerialUSB.print(currentDirection);
+      SerialUSB.print(" to: ");
       currentDirection = strdup(gps.cardinal(gps.course.deg()));
-      SerialUSB.print("++Course Changed to: ");
       SerialUSB.println(currentDirection);
-      trigger = 1;
-      standStill = 0;
-    }
-
-    if (gps.speed.kmph() <= standstillSpeed && standStill == 0) {
-      trigger = 1;
-      standStill = 1;
-    }
-
-    if (firstUpdate != 1 || trigger != 0) {
-      if (firstUpdate != 1) SerialUSB.println("++Send First Lock Location");
-
-      if (standStill == 1) {
-        SerialUSB.println("++We are not driving");
-      }
-
-      trigger = 0;
-      firstUpdate = 1;
-
+       
       latlong.f[0] = latitude;
       latlong.f[1] = longitude;
-      latlong.f[2] = gps.altitude.feet();
+      latlong.f[2] = gps.altitude.meters();
 
       unsigned long currentMillis = millis();
 
@@ -194,6 +172,8 @@ void loop() {
       
       if (millis() > updateTimeLORAsend) {
         updateTimeLORAsend = millis() + LORAinterval;
+        /* Bump Static Update as well */
+        updateTimeLORAsendStandingStill = millis() + LORAintervalStandingStill;
         
         digitalWrite(BLUELED, LOW);
 
@@ -219,13 +199,15 @@ void loop() {
       }
     }
   } else {
-    // update static location every 5 minutes
+    // update static location every 10 minutes
     if ((millis() > updateTimeLORAsendStandingStill) && (gps.location.lat() > 0)) {
         updateTimeLORAsendStandingStill = millis() + LORAintervalStandingStill;
-
+        /* Bump Driving Timer as Well */
+        updateTimeLORAsend = millis() + LORAinterval;
+        
         latlong.f[0] = gps.location.lat();;
         latlong.f[1] = gps.location.lng();;
-        latlong.f[2] = gps.altitude.feet();
+        latlong.f[2] = gps.altitude.meters();
         
         digitalWrite(BLUELED, LOW);
 
@@ -233,7 +215,7 @@ void loop() {
         SerialUSB.print(latlong.f[0], 6);
         SerialUSB.print(",");
         SerialUSB.print(latlong.f[1], 6);
-        SerialUSB.print(" Altitude (in feet): ");
+        SerialUSB.print(" Altitude (in meters): ");
         SerialUSB.print(latlong.f[2], 6);
         SerialUSB.println();
 
