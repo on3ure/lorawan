@@ -170,7 +170,7 @@ post '/aprs-tracker/:token/feed/enco_io' => sub {
 
     $self->log(Dumper $bytes);
     
-    my $hexstring = unpack('H*',decode_base64($bytes));
+    my $hexstring = unpack('H*',$bytes);
     my $latitude = unpack "f", pack "H*", substr($hexstring, 0, 8);
     my $longitude = unpack "f", pack "H*", substr($hexstring, 8, 8);
     my $altitude = unpack "f", pack "H*", substr($hexstring, 16, 8);
