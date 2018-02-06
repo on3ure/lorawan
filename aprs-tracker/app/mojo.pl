@@ -166,9 +166,51 @@ post '/aprs-tracker/:token/feed/enco_io' => sub {
     my $appuser = $self->auth;
     return unless $appuser;
 
-    my $data = $self->req->params->to_hash;
+    my $bytes  = $self->req->body;
 
-    $self->log(Dumper $data);
+    $self->log(Dumper $bytes);
+    
+    my $hexstring = unpack('H*',decode_base64($bytes));
+    my $latitude = unpack "f", pack "H*", substr($hexstring, 0, 8);
+    my $longitude = unpack "f", pack "H*", substr($hexstring, 8, 8);
+    my $altitude = unpack "f", pack "H*", substr($hexstring, 16, 8);
+    $self->log("enco.io: Latitude: " . $latitude . " Longitude: " . $longitude . " Altitude:" . $altitude);
+
+    my ( $degreesn, $minutesn, $secondsn, $signn ) =
+      decimal2dms( $latitude );
+    my ( $degreese, $minutese, $secondse, $signe ) =
+      decimal2dms( $longitude );
+
+    my $type = ">";    #default car
+    $type = "v" if $config->{lora}{enco_io}{type} eq "van";
+    $type = "k"
+      if $config->{lora}{enco_io}{type} eq "pickup";
+
+    my $coord = sprintf(
+        "%02d%02d.%02dN/%03d%02d.%02dE%1s",
+        $degreesn, $minutesn, $secondsn, $degreese,
+        $minutese, $secondse, $type
+    );
+
+    my $callsign  = $config->{lora}{enco_io}{callsign};
+    my $altInFeet = $altitude;
+    my $comment   = "enco.io LoRa";
+
+    my $is = new Ham::APRS::IS(
+        'belgium.aprs2.net:14580', $callsign,
+        'passcode' => Ham::APRS::IS::aprspass($callsign),
+        'appid'    => 'APLORA 1.2'
+    );
+    $is->connect( 'retryuntil' => 3 ) || $self->log("Failed to connect: $is->{error}");
+
+    my( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
+    my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dh%s/A=%06d %s",
+        $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
+    $is->sendline($message);
+
+    $self->log( "enco_io Beacon Send:" . $message );
+
+    $is->disconnect() || $self->log("Failed to disconnect: $is->{error}");
 
     $self->render(
         json => {

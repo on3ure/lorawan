@@ -45,3 +45,7 @@ lora:
       password: 23996
       callsign: ON3URE-1
       type: van
+  enco_io:
+    password: 23996
+    callsign: ON3URE-1
+    type: van
