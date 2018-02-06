@@ -166,7 +166,7 @@ post '/aprs-tracker/:token/feed/enco_io' => sub {
     my $appuser = $self->auth;
     return unless $appuser;
 
-    my $data = $self->req->json;
+    my $data = $self->req->params->to_hash;
 
     $self->log(Dumper $data);
 
