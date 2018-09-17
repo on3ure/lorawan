@@ -20,7 +20,8 @@ securityheaders-development:
   X-Frame-Options: SAMEORIGIN
   X-Xss-Protection: 1; mode=block
 tokens:
-  9c79b9f35373488e6713273298880587: thingsnetwork
+  9c79b9f35373488e6713273298880587: thethingsnetwork
+  0dd718f091da5a2f2d6884761b84ffbd: wirelessthings
 debug: false
 # if not found keep one month
 expire-error: 2592000

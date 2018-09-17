@@ -234,7 +234,7 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
 
     my $data = $self->req->json;
 
-    #$self->log(Dumper $data);
+    $self->log(Dumper $data);
     my $wirelessthings_be = {
           'localTime' => '2018-01-17 11:51:09',
           'rawData' => 'QMYcASaADwAIWAHnX4dhH/kKuytgqMWAng==',
