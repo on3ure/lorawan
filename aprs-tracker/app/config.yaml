@@ -37,10 +37,10 @@ appsecret: 'alo alo this is ure calling for a very secret message to tell you ..
 # pass create via https://apps.magicbug.co.uk/passcode/
 lora:
   wirelessthings_be:
-      26011CC6:
-        password: 23996
-        callsign: ON3URE-1
-        type: van
+      260115E4:
+        password: 16563
+        callsign: ON3ZOE
+        type: walk
   thethingsnetwork_org:
     00050197D45823E9:
       password: 23996

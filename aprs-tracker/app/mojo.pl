@@ -252,11 +252,11 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
           'packetsLeft' => 0,
           'gatewayEui' => 'AA555A0000094223'
         };
-
+    
     my $hexstring = unpack('H*',decode_base64($data->{payload}));
-    my $latitude = unpack "f", pack "H*", substr($hexstring, 0, 8);
-    my $longitude = unpack "f", pack "H*", substr($hexstring, 8, 8);
-    my $altitude = unpack "f", pack "H*", substr($hexstring, 16, 8);
+    my $latitude = (unpack "L", reverse(pack "H*", substr($hexstring, 6, 8))) * 0.000001;
+    my $longitude = (unpack "L", reverse(pack "H*", substr($hexstring, 14, 8))) * 0.000001;
+    my $altitude = 0;
     $self->log("WirelessThings.be: Latitude: " . $latitude . " Longitude: " . $longitude . " Altitude:" . $altitude);
 
     my ( $degreesn, $minutesn, $secondsn, $signn ) =
@@ -265,7 +265,9 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
       decimal2dms( $longitude );
 
     my $type = ">";    #default car
+    $type = ">" if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "car";
     $type = "v" if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "van";
+    $type = "[" if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "walk";
     $type = "k"
       if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "pickup";
 
@@ -277,7 +279,13 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
 
     my $callsign  = $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{callsign};
     my $altInFeet = $altitude;
-    my $comment   = "WT LoRa snr:" . $data->{snr} . " rssi:" . $data->{rssi} . " freq:" . $data->{frequency};
+    my $comment   = "WirelessThings LoRa snr:" . $data->{snr} . " rssi:" . $data->{rssi} . " freq:" . $data->{frequency} . " gateway by ON3URE";
+
+    my $is = new Ham::APRS::IS(
+        'belgium.aprs2.net:14580', $callsign,
+        'passcode' => Ham::APRS::IS::aprspass($callsign),
+        'appid'    => 'APLORA 1.2'
+    );
 
     my $is = new Ham::APRS::IS(
         'belgium.aprs2.net:14580', $callsign,
