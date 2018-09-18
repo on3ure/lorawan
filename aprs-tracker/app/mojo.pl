@@ -287,11 +287,6 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
         'appid'    => 'APLORA 1.2'
     );
 
-    my $is = new Ham::APRS::IS(
-        'belgium.aprs2.net:14580', $callsign,
-        'passcode' => Ham::APRS::IS::aprspass($callsign),
-        'appid'    => 'APLORA 1.2'
-    );
     $is->connect( 'retryuntil' => 3 ) || $self->log("Failed to connect: $is->{error}");
 
     my( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
