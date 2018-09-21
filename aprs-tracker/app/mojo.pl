@@ -168,18 +168,21 @@ post '/aprs-tracker/:token/feed/enco_io' => sub {
 
     my $data = $self->req->json;
 
-    $self->log(Dumper $data);
-    
-    my $hexstring = unpack('H*',decode_base64($data->{payload}));
-    my $latitude = unpack "f", pack "H*", substr($hexstring, 0, 8);
-    my $longitude = unpack "f", pack "H*", substr($hexstring, 8, 8);
-    my $altitude = unpack "f", pack "H*", substr($hexstring, 16, 8);
-    $self->log("enco.io: Latitude: " . $latitude . " Longitude: " . $longitude . " Altitude:" . $altitude);
+    $self->log( Dumper $data);
 
-    my ( $degreesn, $minutesn, $secondsn, $signn ) =
-      decimal2dms( $latitude );
-    my ( $degreese, $minutese, $secondse, $signe ) =
-      decimal2dms( $longitude );
+    my $hexstring = unpack( 'H*', decode_base64( $data->{payload} ) );
+    my $latitude  = unpack "f", pack "H*", substr( $hexstring, 0,  8 );
+    my $longitude = unpack "f", pack "H*", substr( $hexstring, 8,  8 );
+    my $altitude  = unpack "f", pack "H*", substr( $hexstring, 16, 8 );
+    $self->log( "enco.io: Latitude: "
+          . $latitude
+          . " Longitude: "
+          . $longitude
+          . " Altitude:"
+          . $altitude );
+
+    my ( $degreesn, $minutesn, $secondsn, $signn ) = decimal2dms($latitude);
+    my ( $degreese, $minutese, $secondse, $signe ) = decimal2dms($longitude);
 
     my $type = ">";    #default car
     $type = "v" if $config->{lora}{enco_io}{type} eq "van";
@@ -201,9 +204,10 @@ post '/aprs-tracker/:token/feed/enco_io' => sub {
         'passcode' => Ham::APRS::IS::aprspass($callsign),
         'appid'    => 'APLORA 1.2'
     );
-    $is->connect( 'retryuntil' => 3 ) || $self->log("Failed to connect: $is->{error}");
+    $is->connect( 'retryuntil' => 3 )
+      || $self->log("Failed to connect: $is->{error}");
 
-    my( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
     my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dh%s/A=%06d %s",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
     $is->sendline($message);
@@ -234,42 +238,63 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
 
     my $data = $self->req->json;
 
-    $self->log(Dumper $data);
-    my $wirelessthings_be = {
-          'localTime' => '2018-01-17 11:51:09',
-          'rawData' => 'QMYcASaADwAIWAHnX4dhH/kKuytgqMWAng==',
-          'payload' => 'XTlMQiC9hkCamRlB',
-          'snr' => -18,
-          'devAddr' => '26011CC6',
-          'rssi' => -113,
-          'packetIdentifier' => 'b9f72d29ffbd706ddc7a2f4f9ba3546e',
-          'tmst' => 153373252,
-          'frequency' => '867.5',
-          'packetTime' => '2018-01-17T10:51:07.749087Z',
-          'micValid' => 'true',
-          'dataRate' => 'SF12BW125',
-          'fcnt' => '000F',
-          'packetsLeft' => 0,
-          'gatewayEui' => 'AA555A0000094223'
-        };
-    
-    my $hexstring = unpack('H*',decode_base64($data->{payload}));
-    my $latitude = (unpack "L", reverse(pack "H*", substr($hexstring, 6, 8))) * 0.000001;
-    my $longitude = (unpack "L", reverse(pack "H*", substr($hexstring, 14, 8))) * 0.000001;
-    my $altitude = 0;
-    $self->log("WirelessThings.be: Latitude: " . $latitude . " Longitude: " . $longitude . " Altitude:" . $altitude);
+    $self->log( Dumper $data);
 
-    my ( $degreesn, $minutesn, $secondsn, $signn ) =
-      decimal2dms( $latitude );
-    my ( $degreese, $minutese, $secondse, $signe ) =
-      decimal2dms( $longitude );
+    my $wirelessthings_be = {
+        'localTime'        => '2018-01-17 11:51:09',
+        'rawData'          => 'QMYcASaADwAIWAHnX4dhH/kKuytgqMWAng==',
+        'payload'          => 'XTlMQiC9hkCamRlB',
+        'snr'              => -18,
+        'devAddr'          => '26011CC6',
+        'rssi'             => -113,
+        'packetIdentifier' => 'b9f72d29ffbd706ddc7a2f4f9ba3546e',
+        'tmst'             => 153373252,
+        'frequency'        => '867.5',
+        'packetTime'       => '2018-01-17T10:51:07.749087Z',
+        'micValid'         => 'true',
+        'dataRate'         => 'SF12BW125',
+        'fcnt'             => '000F',
+        'packetsLeft'      => 0,
+        'gatewayEui'       => 'AA555A0000094223'
+    };
+
+    if ( !$data->{payload} ) {
+        $self->log("not what we need wrong json data");
+        return $self->render(
+            json => {
+                'add' => 'nok'
+            }
+        );
+    }
+
+    my $hexstring = unpack( 'H*', decode_base64( $data->{payload} ) );
+    my $latitude =
+      ( unpack "L", reverse( pack "H*", substr( $hexstring, 6, 8 ) ) ) *
+      0.000001;
+    my $longitude =
+      ( unpack "L", reverse( pack "H*", substr( $hexstring, 14, 8 ) ) ) *
+      0.000001;
+    my $altitude = 0;
+    $self->log( "WirelessThings.be: Latitude: "
+          . $latitude
+          . " Longitude: "
+          . $longitude
+          . " Altitude:"
+          . $altitude );
+
+    my ( $degreesn, $minutesn, $secondsn, $signn ) = decimal2dms($latitude);
+    my ( $degreese, $minutese, $secondse, $signe ) = decimal2dms($longitude);
 
     my $type = ">";    #default car
-    $type = ">" if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "car";
-    $type = "v" if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "van";
-    $type = "[" if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "walk";
+    $type = ">"
+      if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "car";
+    $type = "v"
+      if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "van";
+    $type = "["
+      if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "walk";
     $type = "k"
-      if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq "pickup";
+      if $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{type} eq
+      "pickup";
 
     my $coord = sprintf(
         "%02d%02d.%02dN/%03d%02d.%02dE%1s",
@@ -277,9 +302,17 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
         $minutese, $secondse, $type
     );
 
-    my $callsign  = $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{callsign};
+    my $callsign =
+      $config->{lora}{wirelessthings_be}{ $data->{devAddr} }{callsign};
     my $altInFeet = $altitude;
-    my $comment   = "WirelessThings LoRa snr:" . $data->{snr} . " rssi:" . $data->{rssi} . " freq:" . $data->{frequency} . " gateway by ON3URE";
+    my $comment =
+        "WirelessThings LoRa snr:"
+      . $data->{snr}
+      . " rssi:"
+      . $data->{rssi}
+      . " freq:"
+      . $data->{frequency}
+      . " gateway by ON3URE";
 
     my $is = new Ham::APRS::IS(
         'belgium.aprs2.net:14580', $callsign,
@@ -287,9 +320,10 @@ post '/aprs-tracker/:token/feed/wirelessthings_be' => sub {
         'appid'    => 'APLORA 1.2'
     );
 
-    $is->connect( 'retryuntil' => 3 ) || $self->log("Failed to connect: $is->{error}");
+    $is->connect( 'retryuntil' => 3 )
+      || $self->log("Failed to connect: $is->{error}");
 
-    my( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
     my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dh%s/A=%06d %s",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
     $is->sendline($message);
@@ -320,17 +354,99 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
 
     my $data = $self->req->json;
 
-    #$self->log(Dumper $data);
+    $self->log( Dumper $data);
 
-    my ( $degreesn, $minutesn, $secondsn, $signn ) =
-      decimal2dms( $data->{payload_fields}{latitude} );
-    my ( $degreese, $minutese, $secondse, $signe ) =
-      decimal2dms( $data->{payload_fields}{longitude} );
+    my $thethingsnetwork_org = {
+        'downlink_url' =>
+'https://integrations.thethingsnetwork.org/ttn-eu/api/v2/down/wim_app/aprs_api?key=ttn-account-v2.RV7KwZhm7UZ6cDSilrn6tVUtkZBL6f_H9si8zPU0j0c',
+        'hardware_serial' => '0042DD9AD323EF0E',
+        'port'            => 1,
+        'dev_id'          => 'groove_tph',
+        'app_id'          => 'wim_app',
+        'metadata'        => {
+            'time'     => '2018-09-21T07:06:05.581602641Z',
+            'gateways' => [
+                {
+                    'rf_chain'  => 0,
+                    'snr'       => '-14.2',
+                    'channel'   => 3,
+                    'time'      => '',
+                    'gtw_id'    => 'eui-aa555a0000090171',
+                    'timestamp' => 1343097572,
+                    'rssi'      => -114
+                },
+                {
+                    'gtw_id'          => 'eui-b827ebfffe308475',
+                    'location_source' => 'registry',
+                    'time'            => '2018-09-21T07:06:05.55562Z',
+                    'snr'             => '-11.5',
+                    'channel'         => 2,
+                    'longitude'       => '4.702314',
+                    'latitude'        => '50.86965',
+                    'altitude'        => 5,
+                    'rf_chain'        => 1,
+                    'rssi'            => -120,
+                    'timestamp'       => 4169756444
+                },
+                {
+                    'snr'       => '-2.2',
+                    'rf_chain'  => 0,
+                    'channel'   => 3,
+                    'time'      => '',
+                    'gtw_id'    => 'eui-aa555a0000090171',
+                    'timestamp' => 4205298508,
+                    'rssi'      => -115
+                }
+            ],
+            'data_rate'   => 'SF12BW125',
+            'frequency'   => '868.5',
+            'coding_rate' => '4/5',
+            'modulation'  => 'LORA'
+        },
+        'counter'     => 2,
+        'payload_raw' => 'fgkAQAoAAAEWlXhETA=='
+    };
+
+    if ( !$data->{payload_raw} ) {
+        $self->log("not what we need wrong json data");
+        return $self->render(
+            json => {
+                'add' => 'nok'
+            }
+        );
+    }
+
+    my $hexstring = unpack( 'H*', decode_base64( $data->{payload_raw} ) );
+    my $latitude =
+      ( unpack "L", reverse( pack "H*", substr( $hexstring, 6, 8 ) ) ) *
+      0.000001;
+    my $longitude =
+      ( unpack "L", reverse( pack "H*", substr( $hexstring, 14, 8 ) ) ) *
+      0.000001;
+    my $altitude = 0;
+    $self->log( "TTN: Latitude: "
+          . $latitude
+          . " Longitude: "
+          . $longitude
+          . " Altitude:"
+          . $altitude );
+
+    my ( $degreesn, $minutesn, $secondsn, $signn ) = decimal2dms($latitude);
+    my ( $degreese, $minutese, $secondse, $signe ) = decimal2dms($longitude);
 
     my $type = ">";    #default car
-    $type = "v" if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type} eq "van";
+    $type = ">"
+      if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type}
+      eq "car";
+    $type = "v"
+      if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type}
+      eq "van";
+    $type = "["
+      if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type}
+      eq "walk";
     $type = "k"
-      if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type} eq "pickup";
+      if $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{type}
+      eq "pickup";
 
     my $coord = sprintf(
         "%02d%02d.%02dN/%03d%02d.%02dE%1s",
@@ -338,23 +454,34 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
         $minutese, $secondse, $type
     );
 
-    my $callsign  = $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }{callsign};
+    my $callsign =
+      $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }
+      {callsign};
     my $altInFeet = $data->{payload_fields}{altitude};
-    my $comment   = "TTN LoRa snr:" . $data->{metadata}{gateways}[0]{snr} . " rssi:" . $data->{metadata}{gateways}[0]{rssi} . " freq:" . $data->{metadata}{frequency};
+    my $comment =
+        "TTN LoRa snr:"
+      . $data->{metadata}{gateways}[0]{snr}
+      . " rssi:"
+      . $data->{metadata}{gateways}[0]{rssi}
+      . " freq:"
+      . $data->{metadata}{frequency}
+      . " gateway by ON3URE";
 
     my $is = new Ham::APRS::IS(
         'belgium.aprs2.net:14580', $callsign,
         'passcode' => Ham::APRS::IS::aprspass($callsign),
         'appid'    => 'APLORA 1.2'
     );
-    $is->connect( 'retryuntil' => 3 ) || $self->log("Failed to connect: $is->{error}");
 
-    my( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
+    $is->connect( 'retryuntil' => 3 )
+      || $self->log("Failed to connect: $is->{error}");
+
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday ) = gmtime();
     my $message = sprintf( "%s>APLORA,TCPIP*:@%02d%02d%02dh%s/A=%06d %s",
         $callsign, $hour, $min, $sec, $coord, $altInFeet, $comment );
     $is->sendline($message);
 
-    $self->log( "beacon sent:" . $message );
+    $self->log( "WirelessThings.be Beacon Send:" . $message );
 
     $is->disconnect() || $self->log("Failed to disconnect: $is->{error}");
 
