@@ -457,7 +457,7 @@ post '/aprs-tracker/:token/feed/thethingsnetwork_org' => sub {
     my $callsign =
       $config->{lora}{thethingsnetwork_org}{ $data->{hardware_serial} }
       {callsign};
-    my $altInFeet = $data->{payload_fields}{altitude};
+    my $altInFeet = $altitude;
     my $comment =
         "TTN LoRa snr:"
       . $data->{metadata}{gateways}[0]{snr}
