@@ -58,9 +58,7 @@ my $config = Config::YAML->new( config => "config.yaml" );
         }; 
     
 
-    my $tt = unpack('H*',decode_base64($data->{'payload'}));
-    print $tt . "\n";
-   my      $hexstring = unpack('H*',decode_base64("AIJjAwiDewBIVsU="));
+    my $hexstring = unpack('H*',decode_base64($data->{'payload'}));
    print $hexstring . "\n";
 
     my $latitude = (unpack "L", reverse(pack "H*", substr($hexstring, 6, 8))) * 0.000001;
