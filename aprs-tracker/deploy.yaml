@@ -1,0 +1,62 @@
+apiVersion: cloud.google.com/v1beta1
+kind: BackendConfig
+metadata:
+  name: aprs-tracker-backend-config
+spec:
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aprs-tracker-backend
+  labels:
+    app: aprs-tracker
+  annotations:
+    beta.cloud.google.com/backend-config: '{"ports": {"80":"aprs-tracker-backend-config"}}'
+spec:
+  type: NodePort
+  selector:
+    app: aprs-tracker
+    tier: web
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: aprs-tracker
+  labels:
+    app: aprs-tracker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: aprs-tracker
+        tier: web
+    spec:
+      containers:
+      - name: aprs-tracker
+        image: gcr.io/customer-mol/lorawan/aprs-tracker-image:latest
+        imagePullPolicy: "Always"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 80
+          initialDelaySeconds: 15
+        ports:
+        - containerPort: 80
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName

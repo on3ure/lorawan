@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-persistent-data
+spec:
+  storageClassName: faster
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-persistent
+  labels:
+    app: redis-persistent
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+  selector:
+    app: redis-persistent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-persistent
+  labels:
+    app: redis-persistent
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      app: redis-persistent
+  template:
+    metadata:
+      labels:
+        app: redis-persistent
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: sysctl/mm.transparent_hugepage.enabled
+                operator: In
+                values:
+                - "never"
+              - key: sysctl/mm.transparent_hugepage.defrag
+                operator: In
+                values:
+                - "never"
+      containers:
+        - image: gcr.io/customer-mol/gce-kube-registry/redis-persistent-image:latest
+          imagePullPolicy: "Always"
+          name: redis-persistent
+          securityContext:
+            privileged: true
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          ports:
+            - containerPort: 6379
+              name: redis-pers
+          volumeMounts:
+            - name: redis-persistent-persistent-storage
+              mountPath: /data
+      volumes:
+        - name: redis-persistent-persistent-storage
+          persistentVolumeClaim:
+            claimName: redis-persistent-data

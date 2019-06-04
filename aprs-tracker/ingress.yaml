@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: aprs-tracker
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: lorawan-aprs-tracker-ip	
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+    certmanager.k8s.io/acme-http01-edit-in-place: "true"
+  labels:
+    app: aprs-tracker
+spec:
+  backend:
+    serviceName: aprs-tracker-backend
+    servicePort: 80
+  tls:
+  - secretName:  lorawan-tls
+    hosts:
+    - lorawan.weepee.io
+#---
+#apiVersion: extensions/v1beta1
+#kind: Ingress
+#metadata:
+#  name: aprs-tracker-ipv6
+#  annotations:
+#    kubernetes.io/ingress.global-static-ip-name: lorawan-site-aprs-tracker-ipv6
+#  labels:
+#    app: aprs-tracker-ipv6
+#spec:
+#  backend:
+#    serviceName: aprs-tracker-backend
+#    servicePort: 80
+#  tls:
+#  - secretName:  lorawan-site-aprs-tracker-tls
+#    hosts:
+#    - almita.be
+#    - www.almita.be
